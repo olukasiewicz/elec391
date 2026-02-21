@@ -101,6 +101,15 @@ function KOUT = heurRCGTune_PID(KIN, Ts_target, Tr_target, OSu_target, Ess_targe
 
     ub = 500*base + 1;
 
+    % --- Cap Kp ---
+    Kp_max = 15;
+    
+    % Ensure initial guess respects the cap
+    x0(1) = min(x0(1), Kp_max);
+    
+    % Ensure upper bound respects the cap
+    ub(1) = min(ub(1), Kp_max);
+
     % --- Optimizer settings ---
     options = optimoptions('fmincon', ...
         'Display', 'iter', ...
