@@ -23,7 +23,7 @@ ax.set_title("Motor Positions")
 ax.set_xlabel("Samples")
 ax.set_ylabel("Position")
 
-max_points = 500  # keep plot responsive; adjust as needed
+max_points = 1000  # keep plot responsive; adjust as needed
 # target_data = []
 # current_data = []
 target_data = deque(maxlen=max_points)
@@ -72,20 +72,20 @@ try:
 
         csv_file.flush()
 
-        # --- plot at fixed rate ---
-        now = time.time()
-        if now >= next_plot and len(target_data) > 1:
-            x = range(len(target_data))
-            line_target.set_data(x, list(target_data))
-            line_current.set_data(x, list(current_data))
+        # # --- plot at fixed rate ---
+        # now = time.time()
+        # if now >= next_plot and len(target_data) > 1:
+        #     x = range(len(target_data))
+        #     line_target.set_data(x, list(target_data))
+        #     line_current.set_data(x, list(current_data))
 
-            ax.set_xlim(0, max_points)  # fixed x-limits helps
-            # Avoid autoscale unless needed; if you must, do it rarely:
-            # ax.relim(); ax.autoscale_view()
+        #     ax.set_xlim(0, max_points)  # fixed x-limits helps
+        #     # Avoid autoscale unless needed; if you must, do it rarely:
+        #     # ax.relim(); ax.autoscale_view()
 
-            fig.canvas.draw_idle()
-            plt.pause(0.001)  # lets GUI update
-            next_plot = now + plot_period
+        #     fig.canvas.draw_idle()
+        #     plt.pause(0.001)  # lets GUI update
+        #     next_plot = now + plot_period
 
 except KeyboardInterrupt:
     print("Stopping...")

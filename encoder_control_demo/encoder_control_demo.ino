@@ -17,7 +17,7 @@ const float I_MAX = 500.0f;  // tune this (units: error-seconds)
 
 // --- timing ---
 const uint32_t PID_PERIOD_US = 1000;    // 1 kHz PID
-const uint32_t LOG_PERIOD_US = 10000;   // 100 Hz logging
+const uint32_t LOG_PERIOD_US = 750;     // 5 kHz logging
 const uint32_t STEP_PERIOD_MS = 1000;   // wait 1s after reaching target before stepping again
 
 uint32_t lastPidUs = 0;
@@ -98,10 +98,12 @@ void loop() {
     lastPidUs += PID_PERIOD_US;              // keeps cadence stable
     const float deltaT = PID_PERIOD_US / 1.0e6f;
 
-    // PID constants (make these globals if you plan to tune live)
+    // PID constants
     const float kp = 15.0f;
-    const float kd = 0.35f;
-    const float ki = 10.0f;
+    // const float kd = 0.35f;
+    // const float ki = 10.0f;
+    const float kd = 0.0f;
+    const float ki = 0.0f;
 
     // error
     const int e = pos - target;
@@ -130,7 +132,8 @@ void loop() {
     // store previous error
     eprev = e;
 
-    // "velocity" estimate: how much position changed since last PID tick
+    // velocity estimate: how much position changed since last PID tick
+    // this detects when the motor has arrived at set location and has finished oscillating
     int dpos = pos - lastPosForSettle;
     lastPosForSettle = pos;
 
@@ -143,7 +146,7 @@ void loop() {
       settleCount = 0;
     }
 
-    settled = (settleCount >= SETTLE_MS);  // because 1 tick = 1 ms at 1kHz
+    settled = (settleCount >= SETTLE_MS);  //  1 tick = 1 ms at 1kHz
   }
 
   // ---- Logging at fixed rate (won't stall PID) ----
