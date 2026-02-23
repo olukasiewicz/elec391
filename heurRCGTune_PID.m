@@ -1,4 +1,4 @@
-function KOUT = heurRCGTune_PID(KIN, Ts_target, Tr_target, OSu_target, Ess_target, p, G, H)
+function KOUT = heurRCGTune_PID(KIN, Ts_target, Tr_target, OSu_target, Ess_target, PM_target, p, G, H)
 % heurRCGTune_PID()
 % Heuristic tuning for PID with derivative filter pole p.
 %
@@ -19,70 +19,67 @@ function KOUT = heurRCGTune_PID(KIN, Ts_target, Tr_target, OSu_target, Ess_targe
     s = tf('s');
 
     % --- Step response helper ---
-    function [Ts, OSu, Ess, Tr, valid] = getStep(Kp, Ki, Kd)
+    function [Ts, OSu, Ess, Tr, PM, valid] = getStep(Kp, Ki, Kd)
         try
-            % PID with derivative filter pole p (p must be negative)
             D = Kp + Ki/s + Kd * (-p*s/(s - p));
-
+    
             % Closed-loop
             T = feedback(G*D, H);
-
+    
             info = stepinfo(T, 'RiseTimeLimits', [0 1]);
             Ts  = info.SettlingTime;
             Tr  = info.RiseTime;
             OSu = info.Overshoot;
-            Ess = abs(1 - dcgain(T)) * 100;   % percent
-
-            valid = all(isfinite([Ts, Tr, OSu, Ess]));
+            Ess = abs(1 - dcgain(T)) * 100;
+    
+            % ---- Phase margin from open-loop ----
+            L = G * D * H;
+            [~, PM] = margin(L);   % PM in degrees (can be Inf/NaN)
+    
+            valid = all(isfinite([Ts, Tr, OSu, Ess])) && isfinite(PM);
         catch
-            Ts = Inf; Tr = Inf; OSu = Inf; Ess = Inf;
+            Ts = Inf; Tr = Inf; OSu = Inf; Ess = Inf; PM = -Inf;
             valid = false;
         end
     end
 
     % --- Violation-only cost (constraints) + soft preference terms ---
     function cost = costFunction(x)
-        Kp = x(1);
-        Ki = x(2);
-        Kd = x(3);
-
-        % IMPORTANT: capture Tr (don't throw it away)
-        [Ts, OSu, Ess, Tr, valid] = getStep(Kp, Ki, Kd);
-
+        Kp = x(1); Ki = x(2); Kd = x(3);
+    
+        [Ts, OSu, Ess, Tr, PM, valid] = getStep(Kp, Ki, Kd);
         if ~valid
-            cost = Inf;
-            return;
+            cost = Inf; return;
         end
-
-        % --- Constraint violations (must be <= targets) ---
+    
+        % violations
         vTs  = max(0, Ts  - Ts_target);
         vOSu = max(0, OSu - OSu_target);
         vEss = max(0, Ess - Ess_target);
-
+    
         cost = 0;
-
-        % HARD penalties
-        if vTs > 0
-            cost = cost + 100*(vTs/Ts_target)^2;
-        end
-
-        if vOSu > 0
-            cost = cost + 100*(vOSu/OSu_target)^2;
-        end
-
-        if vEss > 0
-            cost = cost + 10*(vEss/max(1,Ess_target))^2;
-        end
-
-        % --- Soft performance preference (also improves inside feasible region) ---
-        % Guard against divide-by-zero if Tr_target is 0
+    
+        % hard penalties
+        if vTs  > 0, cost = cost + 100*(vTs/Ts_target)^2; end
+        if vOSu > 0, cost = cost + 100*(vOSu/OSu_target)^2; end
+        if vEss > 0, cost = cost + 10*(vEss/max(1,Ess_target))^2; end
+    
+        % soft preferences
         Tr_den = max(Tr_target, 1e-6);
-
         cost = cost + 0.2*(Ts/Ts_target)^2 ...
                      + 0.2*(OSu/max(1,OSu_target))^2 ...
                      + 0.5*(Tr/Tr_den)^2;
+    
+        % ---- Phase margin requirement: PM must be >= PM_target, and minimize overshoot above it ----
+        wPM_low  = 1e6;   % huge -> effectively a constraint
+        wPM_high = 20;    % tune: larger pushes PM closer to target
+        
+        vPM_low  = max(0, PM_target - PM);   % violation if below 65
+        vPM_high = max(0, PM - PM_target);   % extra margin above 65
+        
+        cost = cost + wPM_low  * (vPM_low/PM_target)^2 ...
+                    + wPM_high * (vPM_high/PM_target)^2;
     end
-
     % --- Initial guess (ACTUAL gains) ---
     Kp0 = KIN.Kp * KIN.K;
     Ki0 = KIN.Ki * KIN.K;
@@ -127,9 +124,10 @@ function KOUT = heurRCGTune_PID(KIN, Ts_target, Tr_target, OSu_target, Ess_targe
     fprintf('Found PID Parameters (actual gains):\n');
     fprintf('Kp = %.6g\nKi = %.6g\nKd = %.6g\n', best(1), best(2), best(3));
 
-    [Ts, OSu, Ess, Tr, ~] = getStep(best(1), best(2), best(3));
+    [Ts, OSu, Ess, Tr, PM, ~] = getStep(best(1), best(2), best(3));
     fprintf('Step response: Ts = %.4f s (target %.4f), ', Ts, Ts_target);
     fprintf('Tr = %.4f s (target %.4f), ', Tr, Tr_target);
     fprintf('OSu = %.4f%% (target %.4f), ', OSu, OSu_target);
     fprintf('Ess = %.4f%% (target %.4f)\n', Ess, Ess_target);
+    fprintf('PM = %.2f deg (target %.2f)\n', PM, PM_target);
 end
