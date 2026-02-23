@@ -4,8 +4,11 @@
 #define IN2 6
 #define IN1 7
 
-// --- encoder position (updated in ISR) ---
-volatile int posi = 0;
+// --- encoder position and filtering (updated in ISR) ---
+volatile int posi = 0; // updated in ISR
+float pos_f = 0.20; // filtered position (counts)
+bool pos_f_init = false; 
+const float ALPHA = 0.50; // weighting of filter: lower value is smoother but more lag
 
 float pwr = 0.0f;
 
@@ -13,7 +16,10 @@ float pwr = 0.0f;
 float eprev = 0;
 float eintegral = 0;
 const float I_MAX = 500.0f;  // tune this (units: error-seconds)
-// start small then increase till Ess goes away w/o overshoot
+
+// --- Derivative filter state ---
+float dpos_f = 0.0f;            // filtered velocity estimate (counts/s)
+const float DERIV_TAU = 0.0221f;  // calculated in MATLAB
 
 // --- timing ---
 const uint32_t PID_PERIOD_US = 1000;    // 1 kHz PID
@@ -30,14 +36,14 @@ const int   VEL_TOL = 1;            // counts per PID tick (1ms). Tune.
 const uint16_t SETTLE_MS = 1000;     // must be stable for 200ms
 uint16_t settleCount = 0;           // counts PID ticks in a row
 int lastPosForSettle = 0;
-bool settled;
+bool settled = false;
+float lastPosForDeriv = 0.0f;
+float lastPosForSettleTick = 0.0f;
 
 // --- target management ---
 int targetDeg = 0;     // target in degrees (0, 90, 180, ...)
 int target = 0;        // target in motor position units (0..239)
-
-// 240 counts per revolution assumed by your modulo
-const float CONVERSION = 240.0f / 360.0f;  // degrees -> motor pos (0.6666...)
+const float CONVERSION = 240.0f / 360.0f; // 240 counts per revolution
 
 void setup() {
   Serial.begin(115200);
@@ -59,27 +65,33 @@ void loop() {
   const uint32_t nowUs = micros();
   const uint32_t nowMs = millis();
 
-  // ---- Read position atomically once per loop ----
+  // ---- read position once per loop ----
   int pos;
   noInterrupts();
   pos = posi;
   interrupts();
 
+  // ---- EWMA filter on position ----
+  if (!pos_f_init) {
+    pos_f = float(pos);
+    pos_f_init = true;
+  }
+  pos_f += ALPHA * ((float)pos - pos_f);
+
   // ---- Target stepping logic ----
-  // Only step to the next 90° after you've arrived and waited STEP_PERIOD_MS.
+  // Only step to the next position after you've arrived and waited STEP_PERIOD_MS.
   static bool wasSettled = false;
 
   if (settled) {
     if (!wasSettled) {
-      // just became settled: start "post-settle" timer
       lastStepMs = nowMs;
       wasSettled = true;
     }
 
     if ((uint32_t)(nowMs - lastStepMs) >= STEP_PERIOD_MS) {
       // step target
-      if (targetDeg == 0) targetDeg = 135;
-      else targetDeg = 135;
+      if (targetDeg == 0) targetDeg = 90;
+      else targetDeg = 0;
 
       target = convert_to_motor_pos(targetDeg, CONVERSION);
 
@@ -100,56 +112,65 @@ void loop() {
 
     // PID constants
     const float kp = 15.0f;
-    // const float kd = 0.35f;
-    // const float ki = 10.0f;
-    const float kd = 0.0f;
-    const float ki = 0.0f;
+    const float ki = 23.113f;
+    const float kd = 0.342f;
 
-    // error
-    const int e = pos - target;
+    // --- Error (counts) ---
+    const float e = (float)(target - pos_f);
 
-    // derivative
-    const float dedt = (e - eprev) / deltaT;
+    // --- Derivative on measurement (counts/s), with 1st-order LPF ---
+    const float dpos_raw = (pos_f - lastPosForDeriv) / deltaT;
+    lastPosForDeriv = pos_f;
 
-    // integral
-    eintegral += e * deltaT;
-    if (eintegral > I_MAX) eintegral = I_MAX;
+    const float alpha = DERIV_TAU / (DERIV_TAU + deltaT);
+    dpos_f = alpha * dpos_f + (1.0f - alpha) * dpos_raw;
+
+    // --- PID (unsaturated) ---
+    const float u_unsat = kp * e + ki * eintegral - kd * dpos_f;
+
+    // --- Saturate command to PWM limits ---
+    float u = u_unsat;
+    if (u > 255.0f)       u = 255.0f;
+    else if (u < -255.0f) u = -255.0f;
+
+    // --- Anti-windup: conditional integration ---
+    // If we're saturated and the error would push further into saturation, freeze integrator.
+    // Otherwise, integrate normally.
+    const bool saturated_high = (u_unsat > 255.0f);
+    const bool saturated_low  = (u_unsat < -255.0f);
+
+    const bool pushing_into_high_sat = saturated_high && (e > 0.0f);
+    const bool pushing_into_low_sat  = saturated_low  && (e < 0.0f);
+
+    if (!(pushing_into_high_sat || pushing_into_low_sat)) {
+      eintegral += e * deltaT;
+    }
+
+    // Optional safety clamp (still good to keep)
+    if (eintegral > I_MAX)       eintegral = I_MAX;
     else if (eintegral < -I_MAX) eintegral = -I_MAX;
 
-    // control signal
-    const float u = kp * e + kd * dedt + ki * eintegral;
-
-    // motor power
+    // --- Drive motor ---
     pwr = fabs(u);
-    if (pwr > 255) pwr = 255;
-
-    // motor direction
-    const int dir = (u < 0) ? -1 : 1;
-
-    // signal the motor
+    const int dir = (u < 0.0f) ? -1 : 1;
     setMotor(dir, (int)pwr, PWM_PIN, IN1, IN2);
 
-    // store previous error
-    eprev = e;
+    // --- Settle detection (counts per tick) ---
+    const float dpos_tick_f = pos_f - lastPosForSettleTick;
+    lastPosForSettleTick = pos_f;
 
-    // velocity estimate: how much position changed since last PID tick
-    // this detects when the motor has arrived at set location and has finished oscillating
-    int dpos = pos - lastPosForSettle;
-    lastPosForSettle = pos;
-
-    bool inPosBand = (abs(e) <= POS_TOL);
-    bool slowEnough = (abs(dpos) <= VEL_TOL);
+    const bool inPosBand  = (fabs(e) <= (float)POS_TOL);
+    const bool slowEnough = (fabs(dpos_tick_f) <= (float)VEL_TOL);
 
     if (inPosBand && slowEnough) {
-      if (settleCount < 60000) settleCount++;   // prevent overflow
+      if (settleCount < 60000) settleCount++;
     } else {
       settleCount = 0;
     }
-
-    settled = (settleCount >= SETTLE_MS);  //  1 tick = 1 ms at 1kHz
+    settled = (settleCount >= SETTLE_MS);
   }
 
-  // ---- Logging at fixed rate (won't stall PID) ----
+  // ---- logging at fixed rate ----
   if ((uint32_t)(nowUs - lastLogUs) >= LOG_PERIOD_US) {
     lastLogUs += LOG_PERIOD_US;
 
@@ -164,7 +185,7 @@ void loop() {
     Serial.print(targetDeg);
     Serial.print(" ");
     // Serial.print("Actual:"); // comment if sending to python
-    Serial.print(int(pos / CONVERSION));
+    Serial.print(int(pos_f / CONVERSION));
     Serial.print(" ");
     Serial.println(int(pwr));
 
@@ -172,13 +193,14 @@ void loop() {
   }
 }
 
+
 void setMotor(int dir, int pwmVal, int pin, int in1, int in2) {
   analogWrite(pin, pwmVal);
 
-  if (dir == 1) {
+  if (dir == -1) {
     digitalWrite(in1, HIGH);
     digitalWrite(in2, LOW);
-  } else if (dir == -1) {
+  } else if (dir == 1) {
     digitalWrite(in1, LOW);
     digitalWrite(in2, HIGH);
   } else {
@@ -198,7 +220,5 @@ void readEncoder() {
 // desired = degrees, conversion = counts/degree
 int convert_to_motor_pos(float desired, float conversion) {
   int p = (int)lround(desired * conversion);
-  //p %= 240;
-  //if (p < 0) p += 240;     // keep it 0..239 even if negative
   return p;
 }
