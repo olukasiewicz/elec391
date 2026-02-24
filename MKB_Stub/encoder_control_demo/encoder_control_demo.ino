@@ -23,7 +23,7 @@ const float DERIV_TAU = 0.0221f;  // calculated in MATLAB
 
 // --- timing ---
 const uint32_t PID_PERIOD_US = 1000;    // 1 kHz PID
-const uint32_t LOG_PERIOD_US = 750;     // 5 kHz logging
+const uint32_t LOG_PERIOD_US = 1000;     // 5 kHz logging
 const uint32_t STEP_PERIOD_MS = 1000;   // wait 1s after reaching target before stepping again
 
 uint32_t lastPidUs = 0;
@@ -42,7 +42,7 @@ float lastPosForSettleTick = 0.0f;
 
 // --- target management ---
 int targetDeg = 0;     // target in degrees (0, 90, 180, ...)
-int target = 0;        // target in motor position units (0..239)
+int target = 0;        // target in motor position units (0..239) 
 const float CONVERSION = 240.0f / 360.0f; // 240 counts per revolution
 
 void setup() {
@@ -90,7 +90,9 @@ void loop() {
 
     if ((uint32_t)(nowMs - lastStepMs) >= STEP_PERIOD_MS) {
       // step target
-      if (targetDeg == 0) targetDeg = 90;
+      if (targetDeg == 0) targetDeg = 135;
+      else if (targetDeg == 135) targetDeg = 45;
+      else if (targetDeg == 45) targetDeg = 0;
       else targetDeg = 0;
 
       target = convert_to_motor_pos(targetDeg, CONVERSION);
@@ -112,8 +114,8 @@ void loop() {
 
     // PID constants
     const float kp = 15.0f;
-    const float ki = 23.113f;
-    const float kd = 0.342f;
+    const float ki = 23.1f;
+    const float kd = 0.34f;
 
     // --- Error (counts) ---
     const float e = (float)(target - pos_f);
@@ -133,22 +135,13 @@ void loop() {
     if (u > 255.0f)       u = 255.0f;
     else if (u < -255.0f) u = -255.0f;
 
-    // --- Anti-windup: conditional integration ---
-    // If we're saturated and the error would push further into saturation, freeze integrator.
+    // If we're saturated stop integrator.
     // Otherwise, integrate normally.
-    const bool saturated_high = (u_unsat > 255.0f);
-    const bool saturated_low  = (u_unsat < -255.0f);
-
-    const bool pushing_into_high_sat = saturated_high && (e > 0.0f);
-    const bool pushing_into_low_sat  = saturated_low  && (e < 0.0f);
-
-    if (!(pushing_into_high_sat || pushing_into_low_sat)) {
+    const bool saturated_high = (u_unsat > 255.0f) && (e > 0.0f);
+    const bool saturated_low  = (u_unsat < -255.0f)  && (e < 0.0f);
+    if (!(saturated_high || saturated_low)) {
       eintegral += e * deltaT;
     }
-
-    // Optional safety clamp (still good to keep)
-    if (eintegral > I_MAX)       eintegral = I_MAX;
-    else if (eintegral < -I_MAX) eintegral = -I_MAX;
 
     // --- Drive motor ---
     pwr = fabs(u);
@@ -182,14 +175,12 @@ void loop() {
     // Serial.print(",");
 
     // Serial.print("Target:"); // comment if sending to python
-    Serial.print(targetDeg);
-    Serial.print(" ");
-    // Serial.print("Actual:"); // comment if sending to python
-    Serial.print(int(pos_f / CONVERSION));
-    Serial.print(" ");
-    Serial.println(int(pwr));
-
-    //}
+    // Serial.print(targetDeg);
+    // Serial.print(" ");
+    // // Serial.print("Actual:"); // comment if sending to python
+    // Serial.print(int(posf / CONVERSION));
+    // Serial.print(" ");
+    // Serial.println(int(pwr));
   }
 }
 

@@ -35,7 +35,7 @@ line_target, = ax.plot([], [], label="target")
 line_current, = ax.plot([], [], label="current")
 ax.legend()
 
-ax.set_ylim(-270,270)
+ax.set_ylim(0,150)
 PLOT_HZ = 20
 plot_period = 1.0/ PLOT_HZ
 next_plot = time.time()
