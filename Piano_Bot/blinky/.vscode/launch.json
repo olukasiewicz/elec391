@@ -1,0 +1,28 @@
+
+
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Blinky",
+      "cwd": "${workspaceRoot}",
+      //please change for different binaries - executable that is flashed 
+      "executable": "build/Debug/controller_blinky.elf",
+      //please change for different binaries - symbol file for gdb debugging
+      "symbolFiles": [
+        "build/Debug/controller_blinky.elf",
+      ],
+      "request": "launch",
+      "type": "cortex-debug",
+      "servertype": "jlink",
+      "serverpath": "JLinkGDBServerCL",
+      "serverArgs": [
+        "-speed",
+        "4000"
+      ],
+      "device": "STM32F412RG",
+      "interface": "swd",
+      "showDevDebugOutput": "none",
+    },
+    ]
+}
