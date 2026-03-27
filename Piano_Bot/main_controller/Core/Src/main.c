@@ -19,6 +19,9 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
+#include "../../Hardware/solenoid.h"
+#include "stm32f4xx_hal.h"
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -102,6 +105,10 @@ int main(void)
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
 
+  Solenoid_Init();
+
+  uint32_t last_sol_tick = 0;
+  uint32_t last_strike_tick = 0;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -111,6 +118,20 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    uint32_t now = HAL_GetTick();  // ms since boot
+
+    // Solenoid state machine — run every 1ms
+    if (now - last_sol_tick >= 1) {
+        last_sol_tick = now;
+        Solenoid_TickAll();
+    }
+
+    // Attempt a strike every 500ms
+    if (now - last_strike_tick >= 500) {
+        last_strike_tick = now;
+        bool fired = Solenoid_Strike(FINGER_WHITE_0);
+        // fired == false means it's still in cooldown — expected on first few calls
+    }
   }
   /* USER CODE END 3 */
 }
