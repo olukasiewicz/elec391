@@ -18,6 +18,8 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "piano_robot_config.h"
+#include "encoder.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -101,8 +103,13 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-  int counterValue = 0;
-  HAL_TIM_Encoder_Start(&htim2,  TIM_CHANNEL_ALL)
+
+
+  // int counterValue = 0;                           --
+  // HAL_TIM_Encoder_Start(&htim2,  TIM_CHANNEL_ALL) -- these lines for testing
+  Encoder_t encoder;
+  Encoder_Init(&encoder);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -111,7 +118,13 @@ int main(void)
   {
     /* USER CODE END WHILE */
     /* USER CODE BEGIN 3 */
-    counterValue = TIM2->CNT;
+
+    // counterValue = TIM2->CNT;
+    Encoder_Update(&encoder);
+    int pos = encoder.position;
+    int vel = encoder.velocity;
+    Encoder_CountsToMm(encoder.position);
+
   }
   /* USER CODE END 3 */
 }
