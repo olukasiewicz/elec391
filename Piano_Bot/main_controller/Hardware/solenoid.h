@@ -12,10 +12,10 @@
 
 
 /* ---- Solenoid timing ---------------------------------------- */
-#define SOLENOID_COUNT          4u
-#define SOL_STRIKE_MS           30u    /* ms solenoid stays energised (key press)  */
+#define SOLENOID_COUNT          5u // TODO change to 5
 #define SOL_MIN_OFF_MS          20u    /* ms minimum rest before re-trigger        */
-#define SOL_MAX_ON_MS           100u    /* Hard safety cutoff (heat protection)     */
+#define SOL_MAX_ON_MS           1000u    /* Hard safety cutoff (heat protection)     */
+/* ---- Solenoid pins ---------------------------------------- */
 #define SOL0_GPIO_PORT   GPIOA
 #define SOL0_PIN         GPIO_PIN_8
 #define SOL1_GPIO_PORT   GPIOC
@@ -24,13 +24,16 @@
 #define SOL2_PIN         GPIO_PIN_8
 #define SOL3_GPIO_PORT   GPIOC
 #define SOL3_PIN         GPIO_PIN_9
+#define SOL4_GPIO_PORT   0u
+#define SOL4_PIN         0u
 
 
 /* Finger index aliases */
 #define FINGER_WHITE_0   0u
-#define FINGER_WHITE_1   1u
-#define FINGER_BLACK_0   2u
-#define FINGER_BLACK_1   3u
+#define FINGER_BLACK_1   1u
+#define FINGER_WHITE_2   2u
+#define FINGER_WHITE_3   3u
+#define FINGER_WHITE_4   4u
  
 typedef enum {
     SOL_IDLE     = 0,
@@ -40,6 +43,7 @@ typedef enum {
  
 typedef struct {
     Sol_State_t state;
+    uint32_t    strike_time;    /* How long to play current note    */
     uint32_t    on_ticks;       /* How long currently energised     */
     uint32_t    off_ticks;      /* How long in cooldown             */
 } Solenoid_t;
@@ -49,7 +53,7 @@ void Solenoid_Init(void);
  
 /* Trigger a single finger strike.  Non-blocking.
  * Returns false if the solenoid is in cooldown. */
-bool Solenoid_Strike(uint8_t finger_idx);
+bool Solenoid_Strike(uint8_t finger_idx, uint16_t strike_ms);
  
 /* Release a finger immediately (force off) */
 void Solenoid_Release(uint8_t finger_idx);

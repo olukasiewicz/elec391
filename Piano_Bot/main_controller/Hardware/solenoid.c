@@ -1,5 +1,6 @@
 
 #include "solenoid.h"
+#include <stdint.h>
 
 //#include "stm32f4xx_hal_gpio.h"
 
@@ -32,21 +33,22 @@ void Solenoid_Init(void)
         sol_set(i, false);
         s_sol[i].state    = SOL_IDLE;
         s_sol[i].on_ticks  = 0;
-        // s_sol[i].off_ticks = 0; TODO cooldown feature
+        s_sol[i].off_ticks = 0;
     }
 }
 
 /* ------------------------------------------------------------------ */
-bool Solenoid_Strike(uint8_t finger_idx)
+bool Solenoid_Strike(uint8_t finger_idx, uint16_t strike_ms)
 {
     if (finger_idx >= SOLENOID_COUNT) return false;
     Solenoid_t *s = &s_sol[finger_idx]; // get solenoid obj
 
-    // if (s->state != SOL_IDLE) return false; // busy or cooling
+    if (s->state != SOL_IDLE) return false; // busy or cooling
 
     sol_set(finger_idx, true);
     s->state    = SOL_ACTIVE;
     s->on_ticks = 0;
+    s->strike_time = strike_ms;
     return true;
 }
 
@@ -55,9 +57,9 @@ void Solenoid_Release(uint8_t finger_idx)
 {
     if (finger_idx >= SOLENOID_COUNT) return;
     sol_set(finger_idx, false);
-    // s_sol[finger_idx].state     = SOL_COOLDOWN; // for cooldown
-    s_sol[finger_idx].state     = SOL_IDLE;
-    // s_sol[finger_idx].off_ticks = 0; // for cooldown
+    s_sol[finger_idx].state     = SOL_COOLDOWN; // for cooldown
+    // s_sol[finger_idx].state     = SOL_IDLE;
+    s_sol[finger_idx].off_ticks = 0; // for cooldown
 }
 
 /* ------------------------------------------------------------------ */
@@ -79,7 +81,7 @@ void Solenoid_Tick(uint8_t finger_idx)
             s->on_ticks++;
             /* Safety cutoff — never stay on beyond maximum */
             if (s->on_ticks >= SOL_MAX_ON_MS ||
-                s->on_ticks >= SOL_STRIKE_MS)
+                s->on_ticks >= s->strike_time)
             {
                 sol_set(finger_idx, false);
                 s->state     = SOL_COOLDOWN;
@@ -87,12 +89,12 @@ void Solenoid_Tick(uint8_t finger_idx)
             }
             break;
  
-        // case SOL_COOLDOWN:
-        //     s->off_ticks++;
-        //     if (s->off_ticks >= SOL_MIN_OFF_MS) {
-        //         s->state = SOL_IDLE;
-        //     }
-        //     break;
+        case SOL_COOLDOWN:
+            s->off_ticks++;
+            if (s->off_ticks >= SOL_MIN_OFF_MS) {
+                s->state = SOL_IDLE;
+            }
+            break;
  
         case SOL_IDLE:
         default:

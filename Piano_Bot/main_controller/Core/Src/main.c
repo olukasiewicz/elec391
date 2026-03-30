@@ -18,13 +18,10 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-
-#include "../../Hardware/solenoid.h"
 #include "stm32f4xx_hal.h"
-
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "solenoid.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -127,9 +124,9 @@ int main(void)
     }
 
     // Attempt a strike every 500ms
-    if (now - last_strike_tick >= 500) {
+    if (now - last_strike_tick >= 2000) {
         last_strike_tick = now;
-        bool fired = Solenoid_Strike(FINGER_WHITE_0);
+        bool fired = Solenoid_Strike(FINGER_WHITE_0, 500);
         // fired == false means it's still in cooldown — expected on first few calls
     }
   }
