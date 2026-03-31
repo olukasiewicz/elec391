@@ -1,0 +1,3 @@
+C:/Users/onluk/OneDrive/Desktop/CLONED 391 REPO/elec391/Piano_Bot/cubemx_testing/Core/Src/stm32f4xx_hal_timebase_tim.c:41:19:HAL_InitTick	56	static
+C:/Users/onluk/OneDrive/Desktop/CLONED 391 REPO/elec391/Piano_Bot/cubemx_testing/Core/Src/stm32f4xx_hal_timebase_tim.c:111:6:HAL_SuspendTick	4	static
+C:/Users/onluk/OneDrive/Desktop/CLONED 391 REPO/elec391/Piano_Bot/cubemx_testing/Core/Src/stm32f4xx_hal_timebase_tim.c:123:6:HAL_ResumeTick	4	static
