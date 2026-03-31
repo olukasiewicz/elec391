@@ -18,11 +18,14 @@ typedef enum {
     MOTOR_DIR_BRAKE   = 3,
 } Motor_Dir_t;
 
+
+void set_pwm_duty(float duty_cycle);
+
 /* Initialise GPIO & PWM timer */
 void Motor_Init(void);
  
 /* Raw drive: speed 0–100 %, direction */
-void Motor_Drive(uint8_t speed_pct, Motor_Dir_t dir);
+void Motor_Drive(float duty_cycle, Motor_Dir_t dir);
  
 /* Immediate stop (coast) */
 void Motor_Coast(void);

@@ -18,13 +18,13 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "app_pid.h"
-#include "piano_robot_config.h"
-#include "encoder.h"
-#include "motor.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "motor.h"
+#include "encoder.h"
+#include "app_pid.h"
+#include "piano_robot_config.h"
 
 /* USER CODE END Includes */
 
@@ -113,8 +113,28 @@ int main(void)
   Encoder_Init(&encoder);
   Motor_Init();
   PID pid;
-  PID_Config pid_conf;
-  app_pid_init(&pid, &pid_conf);
+  const PID_Config PID_CONF = {
+      .Kp = 1.0f,
+      .Ki = 0.0f,
+      .Kd = 0.0f,
+      .Kb = 0.0f,
+
+      .Kff = 0.0f,
+      .smoothing_coeff = 0.0f,
+
+      .out_max = 100.0f,
+      .out_min = -100.0f,
+      .max_integral = 50.0f,
+      .min_integral = -50.0f,
+
+      .clamp_output = true,
+      .clamp_integral = true,
+      .back_calculation = false,
+      .feed_forward = false,
+      .sample_time = 0.001f
+  };
+
+  app_pid_init(&pid, &PID_CONF);
 
   /* USER CODE END 2 */
 
@@ -123,6 +143,7 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
+
     /* USER CODE BEGIN 3 */
 
     // counterValue = TIM2->CNT;
@@ -130,6 +151,9 @@ int main(void)
     int pos = encoder.position;
     int vel = encoder.velocity;
     int dist = Encoder_CountsToMm(encoder.position);
+
+    // app_pid_compute(PID *pid, float setpoint, float input, float disturbance)
+    Motor_Update(-75.0f, 50.0f);
   }
   /* USER CODE END 3 */
 }
@@ -315,9 +339,9 @@ static void MX_TIM3_Init(void)
 
   /* USER CODE END TIM3_Init 1 */
   htim3.Instance = TIM3;
-  htim3.Init.Prescaler = 0;
+  htim3.Init.Prescaler = TIM3prescaler;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim3.Init.Period = 65535;
+  htim3.Init.Period = TIM3autoreload;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_PWM_Init(&htim3) != HAL_OK)

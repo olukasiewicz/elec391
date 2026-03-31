@@ -2,6 +2,14 @@
 // #include "app_utils.h"
 #include <assert.h>
 
+#ifndef MIN
+#define MIN(a, b) (((a) < (b)) ? (a) : (b))
+#endif
+
+#ifndef MAX
+#define MAX(a, b) (((a) > (b)) ? (a) : (b))
+#endif
+
 #define CLAMP(x, min, max) (MAX(MIN(x, max), min))
 
 void app_pid_init(PID *pid, const PID_Config *conf)
