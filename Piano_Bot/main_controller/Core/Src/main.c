@@ -123,8 +123,7 @@ int main(void)
     Encoder_Update(&encoder);
     int pos = encoder.position;
     int vel = encoder.velocity;
-    Encoder_CountsToMm(encoder.position);
-
+    int dist = Encoder_CountsToMm(encoder.position);
   }
   /* USER CODE END 3 */
 }
