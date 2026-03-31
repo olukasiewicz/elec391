@@ -1,0 +1,37 @@
+#ifndef PIANO_ROBOT_CONFIG_H
+#define PIANO_ROBOT_CONFIG_H
+ 
+/* ============================================================
+ *  piano_robot_config.h
+ *  Central hardware & tuning configuration for the piano robot.
+ *  Edit this file to match your PCB pin assignments and tuning.
+ * ============================================================ */
+ 
+#include "stm32f4xx_hal.h"
+ 
+/* ----------------------------------------------------------
+ * MCU PERIPHERAL HANDLES
+ * Declare externs here; define in main.c / CubeMX generated code
+ * ---------------------------------------------------------- */
+extern TIM_HandleTypeDef htim1;   /* PWM timer for H-bridge (TIM1 CH1/CH2) */
+extern TIM_HandleTypeDef htim2;   /* Encoder timer (TIM2, encoder mode)     */
+extern TIM_HandleTypeDef htim3;   /* Solenoid PWM / tick timer (optional)   */
+
+
+
+
+/* ----------------------------------------------------------
+ * ENCODER
+ * ---------------------------------------------------------- */
+#define ENCODER_TIM             htim2
+#define ENCODER_CPR             1024u        /* Counts per revolution (×4 mode) */
+#define ENCODER_PULLEY_MM       (50.0f * 3.14159265f) /* Circumference in mm   */
+/* counts per mm = (ENCODER_CPR * 4) / ENCODER_PULLEY_MM  — computed at runtime */
+ 
+
+
+
+
+
+
+#endif /* PIANO_ROBOT_CONFIG_H */

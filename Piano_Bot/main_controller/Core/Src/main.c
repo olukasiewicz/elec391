@@ -21,6 +21,10 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "motor.h"
+#include "encoder.h"
+#include "app_pid.h"
+#include "piano_robot_config.h"
 
 /* USER CODE END Includes */
 
@@ -102,6 +106,36 @@ int main(void)
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
 
+
+  // int counterValue = 0;                           --
+  // HAL_TIM_Encoder_Start(&htim2,  TIM_CHANNEL_ALL) -- these lines for testing
+  Encoder_t encoder;
+  Encoder_Init(&encoder);
+  Motor_Init();
+  PID pid;
+  const PID_Config PID_CONF = {
+      .Kp = 1.0f,
+      .Ki = 0.0f,
+      .Kd = 0.0f,
+      .Kb = 0.0f,
+
+      .Kff = 0.0f,
+      .smoothing_coeff = 0.0f,
+
+      .out_max = 100.0f,
+      .out_min = -100.0f,
+      .max_integral = 50.0f,
+      .min_integral = -50.0f,
+
+      .clamp_output = true,
+      .clamp_integral = true,
+      .back_calculation = false,
+      .feed_forward = false,
+      .sample_time = 0.001f
+  };
+
+  app_pid_init(&pid, &PID_CONF);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -111,6 +145,15 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+
+    // counterValue = TIM2->CNT;
+    Encoder_Update(&encoder);
+    int pos = encoder.position;
+    int vel = encoder.velocity;
+    int dist = Encoder_CountsToMm(encoder.position);
+
+    // app_pid_compute(PID *pid, float setpoint, float input, float disturbance)
+    Motor_Update(-75.0f, 50.0f);
   }
   /* USER CODE END 3 */
 }
@@ -240,8 +283,8 @@ static void MX_TIM2_Init(void)
 
   /* USER CODE END TIM2_Init 0 */
 
+  TIM_Encoder_InitTypeDef sConfig = {0};
   TIM_MasterConfigTypeDef sMasterConfig = {0};
-  TIM_OC_InitTypeDef sConfigOC = {0};
 
   /* USER CODE BEGIN TIM2_Init 1 */
 
@@ -252,7 +295,16 @@ static void MX_TIM2_Init(void)
   htim2.Init.Period = 4294967295;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_PWM_Init(&htim2) != HAL_OK)
+  sConfig.EncoderMode = TIM_ENCODERMODE_TI12;
+  sConfig.IC1Polarity = TIM_ICPOLARITY_RISING;
+  sConfig.IC1Selection = TIM_ICSELECTION_DIRECTTI;
+  sConfig.IC1Prescaler = TIM_ICPSC_DIV1;
+  sConfig.IC1Filter = 5;
+  sConfig.IC2Polarity = TIM_ICPOLARITY_RISING;
+  sConfig.IC2Selection = TIM_ICSELECTION_DIRECTTI;
+  sConfig.IC2Prescaler = TIM_ICPSC_DIV1;
+  sConfig.IC2Filter = 0;
+  if (HAL_TIM_Encoder_Init(&htim2, &sConfig) != HAL_OK)
   {
     Error_Handler();
   }
@@ -262,22 +314,9 @@ static void MX_TIM2_Init(void)
   {
     Error_Handler();
   }
-  sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 0;
-  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
-  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-  if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
-  {
-    Error_Handler();
-  }
   /* USER CODE BEGIN TIM2_Init 2 */
 
   /* USER CODE END TIM2_Init 2 */
-  HAL_TIM_MspPostInit(&htim2);
 
 }
 
@@ -300,9 +339,9 @@ static void MX_TIM3_Init(void)
 
   /* USER CODE END TIM3_Init 1 */
   htim3.Instance = TIM3;
-  htim3.Init.Prescaler = 0;
+  htim3.Init.Prescaler = TIM3prescaler;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim3.Init.Period = 65535;
+  htim3.Init.Period = TIM3autoreload;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_PWM_Init(&htim3) != HAL_OK)

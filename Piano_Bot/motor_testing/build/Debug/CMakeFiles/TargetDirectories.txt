@@ -1,0 +1,6 @@
+C:/Users/deven/Documents/School/Year3_Sem2/Elec 391/elec391/Piano_Bot/motor_testing/build/Debug/CMakeFiles/motor_testing.dir
+C:/Users/deven/Documents/School/Year3_Sem2/Elec 391/elec391/Piano_Bot/motor_testing/build/Debug/CMakeFiles/edit_cache.dir
+C:/Users/deven/Documents/School/Year3_Sem2/Elec 391/elec391/Piano_Bot/motor_testing/build/Debug/CMakeFiles/rebuild_cache.dir
+C:/Users/deven/Documents/School/Year3_Sem2/Elec 391/elec391/Piano_Bot/motor_testing/build/Debug/cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir
+C:/Users/deven/Documents/School/Year3_Sem2/Elec 391/elec391/Piano_Bot/motor_testing/build/Debug/cmake/stm32cubemx/CMakeFiles/edit_cache.dir
+C:/Users/deven/Documents/School/Year3_Sem2/Elec 391/elec391/Piano_Bot/motor_testing/build/Debug/cmake/stm32cubemx/CMakeFiles/rebuild_cache.dir

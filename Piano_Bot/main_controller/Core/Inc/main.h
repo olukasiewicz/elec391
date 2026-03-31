@@ -59,10 +59,14 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define SENS_B_Pin GPIO_PIN_1
-#define SENS_B_GPIO_Port GPIOA
-#define SENS_A_Pin GPIO_PIN_2
-#define SENS_A_GPIO_Port GPIOA
+#define TIM3frequency 1000
+#define TIM3prescaler 0
+#define TIMxfrequency 16000000
+#define TIM3autoreload TIMxfrequency/((TIM3prescaler+1)*TIM3frequency)
+#define SENSE_A_Pin GPIO_PIN_0
+#define SENSE_A_GPIO_Port GPIOA
+#define SENSE_B_Pin GPIO_PIN_1
+#define SENSE_B_GPIO_Port GPIOA
 #define M2_Pin GPIO_PIN_0
 #define M2_GPIO_Port GPIOB
 #define M1_Pin GPIO_PIN_1
