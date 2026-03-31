@@ -7,10 +7,10 @@
       "name": "Debug Blinky",
       "cwd": "${workspaceRoot}",
       //please change for different binaries - executable that is flashed 
-      "executable": "build/Debug/controller_blinky.elf",
+      "executable": "build/Debug/main_controller.elf",
       //please change for different binaries - symbol file for gdb debugging
       "symbolFiles": [
-        "build/Debug/controller_blinky.elf",
+        "build/Debug/main_controller.elf",
       ],
       "request": "launch",
       "type": "cortex-debug",
