@@ -18,8 +18,10 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "app_pid.h"
 #include "piano_robot_config.h"
 #include "encoder.h"
+#include "motor.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -109,6 +111,10 @@ int main(void)
   // HAL_TIM_Encoder_Start(&htim2,  TIM_CHANNEL_ALL) -- these lines for testing
   Encoder_t encoder;
   Encoder_Init(&encoder);
+  Motor_Init();
+  PID pid;
+  PID_Config pid_conf;
+  app_pid_init(&pid, &pid_conf);
 
   /* USER CODE END 2 */
 
