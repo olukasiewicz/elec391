@@ -106,21 +106,19 @@ int main(void)
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
 
-    // Starting Timer in Encoder mode
-    SEGGER_RTT_Init();
-    HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_ALL);
+  // Starting Timer in Encoder mode
+  SEGGER_RTT_Init();
+  HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_ALL);
 
-    // Initializing PWM for motor control
-    HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3);
-    HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_4);
+  // Initializing PWM for motor control
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3);
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_4);
 
-    uint32_t arr = __HAL_TIM_GET_AUTORELOAD(&htim3);
-    uint32_t ccr_value = (uint32_t)((60/100.0f) * arr);
-    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, ccr_value);
+  uint32_t arr = __HAL_TIM_GET_AUTORELOAD(&htim3);
+  uint32_t ccr_value = 0.6f * arr;
 
-    arr = __HAL_TIM_GET_AUTORELOAD(&htim3);
-    ccr_value = (uint32_t)((60/100.0f) * arr);
-    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, ccr_value);
+  __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, ccr_value);
+  __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, ccr_value);
     
   /* USER CODE END 2 */
 
