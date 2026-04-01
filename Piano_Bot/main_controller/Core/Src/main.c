@@ -21,10 +21,13 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "piano_robot_config.h"
 #include "motor.h"
 #include "encoder.h"
 #include "app_pid.h"
-#include "piano_robot_config.h"
+
+#include "SEGGER_RTT.h"
+#include "SEGGER_RTT_Conf.h"
 
 /* USER CODE END Includes */
 
@@ -105,13 +108,7 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-
-
-  // int counterValue = 0;                           --
-  // HAL_TIM_Encoder_Start(&htim2,  TIM_CHANNEL_ALL) -- these lines for testing
   Encoder_t encoder;
-  Encoder_Init(&encoder);
-  Motor_Init();
   PID pid;
   const PID_Config PID_CONF = {
       .Kp = 1.0f,
@@ -133,7 +130,8 @@ int main(void)
       .feed_forward = false,
       .sample_time = 0.001f
   };
-
+  Encoder_Init(&encoder);
+  Motor_Init();
   app_pid_init(&pid, &PID_CONF);
 
   /* USER CODE END 2 */
