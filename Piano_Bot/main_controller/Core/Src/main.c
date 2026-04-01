@@ -154,7 +154,7 @@ int main(void)
     float dist = Encoder_CountsToMm(encoder.position);
 
     float target = 500;
-
+    
     float duty_cycle = app_pid_compute(&pid, target, (float)encoder.position, 0.0f);
     Motor_Update(duty_cycle, pid.error);
   }

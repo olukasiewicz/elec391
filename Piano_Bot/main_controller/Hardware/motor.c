@@ -24,13 +24,14 @@ void set_pwm_duty(float duty_cycle)
 void Motor_Init(void)
 {
     // /* Direction pins default to STOP */
-    HAL_GPIO_WritePin(M1_GPIO_Port, M1_Pin, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(M2_GPIO_Port, M2_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(M1_GPIO_Port, M1_Pin, GPIO_PIN_RESET);// TODO DELETE
+    HAL_GPIO_WritePin(M2_GPIO_Port, M2_Pin, GPIO_PIN_RESET);// TODO DELETE
  
     /* Start PWM */
     HAL_TIM_PWM_Start(&MOTOR_PWM_TIM, TIM_CHANNEL_3);
     HAL_TIM_PWM_Start(&MOTOR_PWM_TIM, TIM_CHANNEL_4);
-    set_pwm_duty(0);
+    __HAL_TIM_SET_COMPARE(&MOTOR_PWM_TIM, TIM_CHANNEL_3, 0);
+    __HAL_TIM_SET_COMPARE(&MOTOR_PWM_TIM, TIM_CHANNEL_4, 0);
 }
 
 /* ------------------------------------------------------------------ */
@@ -65,14 +66,12 @@ void Motor_Drive(float duty_cycle, Motor_Dir_t dir)
             break;
  
         case MOTOR_DIR_BRAKE:
-            __HAL_TIM_SET_COMPARE(&MOTOR_PWM_TIM, TIM_CHANNEL_3, arr);
-            __HAL_TIM_SET_COMPARE(&MOTOR_PWM_TIM, TIM_CHANNEL_4, arr);
+            Motor_Brake();
             break;
  
         default:
         case MOTOR_DIR_STOP:
-            __HAL_TIM_SET_COMPARE(&MOTOR_PWM_TIM, TIM_CHANNEL_3, 0);
-            __HAL_TIM_SET_COMPARE(&MOTOR_PWM_TIM, TIM_CHANNEL_4, 0);
+            Motor_Coast();
             break;
     }
 }
@@ -80,15 +79,14 @@ void Motor_Drive(float duty_cycle, Motor_Dir_t dir)
 /* ------------------------------------------------------------------ */
 void Motor_Coast(void)
 {
-    set_pwm_duty(0);
-    HAL_GPIO_WritePin(M1_GPIO_Port, M1_Pin, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(M2_GPIO_Port, M2_Pin, GPIO_PIN_RESET);
+    __HAL_TIM_SET_COMPARE(&MOTOR_PWM_TIM, TIM_CHANNEL_3, 0);
+    __HAL_TIM_SET_COMPARE(&MOTOR_PWM_TIM, TIM_CHANNEL_4, 0);
 }
  
 /* ------------------------------------------------------------------ */
 void Motor_Brake(void)
 {
-    set_pwm_duty(MOTOR_PWM_MAX);
-    HAL_GPIO_WritePin(M1_GPIO_Port, M1_Pin, GPIO_PIN_SET);
-    HAL_GPIO_WritePin(M2_GPIO_Port, M2_Pin, GPIO_PIN_SET);
+    uint32_t arr = __HAL_TIM_GET_AUTORELOAD(&htim3);
+    __HAL_TIM_SET_COMPARE(&MOTOR_PWM_TIM, TIM_CHANNEL_3, arr);
+    __HAL_TIM_SET_COMPARE(&MOTOR_PWM_TIM, TIM_CHANNEL_4, arr);
 }
