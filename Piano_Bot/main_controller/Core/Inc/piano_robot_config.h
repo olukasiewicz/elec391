@@ -17,9 +17,6 @@ extern TIM_HandleTypeDef htim1;   /* PWM timer for H-bridge (TIM1 CH1/CH2) */
 extern TIM_HandleTypeDef htim2;   /* Encoder timer (TIM2, encoder mode)     */
 extern TIM_HandleTypeDef htim3;   /* Solenoid PWM / tick timer (optional)   */
 
-
-
-
 /* ----------------------------------------------------------
  * ENCODER
  * ---------------------------------------------------------- */
@@ -29,8 +26,19 @@ extern TIM_HandleTypeDef htim3;   /* Solenoid PWM / tick timer (optional)   */
 /* counts per mm = (ENCODER_CPR * 4) / ENCODER_PULLEY_MM  — computed at runtime */
  
 
+/* ----------------------------------------------------------
+ * SOLENOIDS
+ * ---------------------------------------------------------- */
+#define SOLENOID_COUNT          5u
+#define SOL_MIN_OFF_MS          20u    /* ms minimum rest before re-trigger        */
+#define SOL_MAX_ON_MS           1000u    /* Hard safety cutoff (heat protection)     */
 
-
+/* Finger index aliases */
+#define FINGER_WHITE_0   0u
+#define FINGER_BLACK_1   1u
+#define FINGER_WHITE_2   2u
+#define FINGER_WHITE_3   3u
+#define FINGER_WHITE_4   4u
 
 
 

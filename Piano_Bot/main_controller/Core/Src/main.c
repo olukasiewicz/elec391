@@ -137,8 +137,6 @@ int main(void)
 
   Solenoid_Init();
 
-  uint32_t last_sol_tick = 0;
-  uint32_t last_strike_tick = 0;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -153,10 +151,12 @@ int main(void)
     Encoder_Update(&encoder);
     int pos = encoder.position;
     int vel = encoder.velocity;
-    int dist = Encoder_CountsToMm(encoder.position);
+    float dist = Encoder_CountsToMm(encoder.position);
 
-    // app_pid_compute(PID *pid, float setpoint, float input, float disturbance)
-    Motor_Update(-75.0f, 50.0f);
+    float target = 500;
+
+    float duty_cycle = app_pid_compute(&pid, target, (float)encoder.position, 0.0f);
+    Motor_Update(duty_cycle, pid.error);
   }
   /* USER CODE END 3 */
 }

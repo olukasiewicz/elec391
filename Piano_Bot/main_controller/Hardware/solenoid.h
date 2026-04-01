@@ -6,34 +6,9 @@
  * ============================================================ */
  
 #include "stm32f4xx_hal.h"
-// #include "piano_robot_config.h"
 #include <stdint.h>
 #include <stdbool.h>
 
-
-/* ---- Solenoid timing ---------------------------------------- */
-#define SOLENOID_COUNT          5u // TODO change to 5
-#define SOL_MIN_OFF_MS          20u    /* ms minimum rest before re-trigger        */
-#define SOL_MAX_ON_MS           1000u    /* Hard safety cutoff (heat protection)     */
-/* ---- Solenoid pins ---------------------------------------- */
-#define SOL0_GPIO_PORT   GPIOA
-#define SOL0_PIN         GPIO_PIN_8
-#define SOL1_GPIO_PORT   GPIOC
-#define SOL1_PIN         GPIO_PIN_7
-#define SOL2_GPIO_PORT   GPIOC
-#define SOL2_PIN         GPIO_PIN_8
-#define SOL3_GPIO_PORT   GPIOC
-#define SOL3_PIN         GPIO_PIN_9
-#define SOL4_GPIO_PORT   0u
-#define SOL4_PIN         0u
-
-
-/* Finger index aliases */
-#define FINGER_WHITE_0   0u
-#define FINGER_BLACK_1   1u
-#define FINGER_WHITE_2   2u
-#define FINGER_WHITE_3   3u
-#define FINGER_WHITE_4   4u
  
 typedef enum {
     SOL_IDLE     = 0,

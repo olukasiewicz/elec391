@@ -1,5 +1,7 @@
 
 #include "solenoid.h"
+#include "main.h"
+#include "piano_robot_config.h"
 #include <stdint.h>
 
 //#include "stm32f4xx_hal_gpio.h"
@@ -11,10 +13,11 @@ typedef struct {
 } Sol_GPIO_t;
 
 static const Sol_GPIO_t s_gpio[SOLENOID_COUNT] = {
-    { SOL0_GPIO_PORT, SOL0_PIN },
-    { SOL1_GPIO_PORT, SOL1_PIN },
-    { SOL2_GPIO_PORT, SOL2_PIN },
-    { SOL3_GPIO_PORT, SOL3_PIN },
+    { Solenoid_CTRL1_GPIO_Port, Solenoid_CTRL1_Pin },
+    { Solenoid_CTRL2_GPIO_Port, Solenoid_CTRL2_Pin },
+    { Solenoid_CTRL3_GPIO_Port, Solenoid_CTRL3_Pin },
+    { Solenoid_CTRL4_GPIO_Port, Solenoid_CTRL4_Pin },
+    { Solenoid_CTRL5_GPIO_Port, Solenoid_CTRL5_Pin },
 };
 
 /* ---- State array -------------------------------------------------- */

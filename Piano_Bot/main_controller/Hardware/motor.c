@@ -1,5 +1,6 @@
 #include "motor.h"
 #include "piano_robot_config.h"
+#include "main.h"
 #include <stdint.h>
 #include <stdlib.h>
 #include <math.h>
@@ -7,11 +8,6 @@
 #define MOTOR_PWM_MAX 100
 #define MOTOR_PWM_TIM htim3
 #define MOTOR_PWM_CHANNEL 1
-
-#define M2_Pin GPIO_PIN_0
-#define M2_GPIO_Port GPIOB
-#define M1_Pin GPIO_PIN_1
-#define M1_GPIO_Port GPIOB
 
 #define POS_DEADBAND_COUNTS 10   
 
