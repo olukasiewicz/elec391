@@ -18,9 +18,10 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-
+#include "stm32f4xx_hal.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "solenoid.h"
 #include "piano_robot_config.h"
 #include "motor.h"
 #include "encoder.h"
@@ -134,6 +135,10 @@ int main(void)
   Motor_Init();
   app_pid_init(&pid, &PID_CONF);
 
+  Solenoid_Init();
+
+  uint32_t last_sol_tick = 0;
+  uint32_t last_strike_tick = 0;
   /* USER CODE END 2 */
 
   /* Infinite loop */
