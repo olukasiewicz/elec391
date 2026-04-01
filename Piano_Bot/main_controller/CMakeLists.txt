@@ -46,6 +46,9 @@ target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
     Hardware/solenoid.c
+    Hardware/encoder.c
+    Hardware/motor.c
+    Hardware/app_pid.c
 )
 
 # Add include paths
