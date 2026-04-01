@@ -59,10 +59,13 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define TIM3autoreload TIMxfrequency/((TIM3prescaler+1)*TIM3frequency)
 #define TIM3frequency 1000
 #define TIM3prescaler 0
 #define TIMxfrequency 16000000
-#define TIM3autoreload TIMxfrequency/((TIM3prescaler+1)*TIM3frequency)
+#define TIM6prescaler 999
+#define TIM6period 1
+#define TIM6autoreload (TIM6period*TIMxfrequency)/(TIM6prescaler+1)-1
 #define SENSE_A_Pin GPIO_PIN_0
 #define SENSE_A_GPIO_Port GPIOA
 #define SENSE_B_Pin GPIO_PIN_1

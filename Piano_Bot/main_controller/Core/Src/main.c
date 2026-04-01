@@ -18,7 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "stm32f4xx_hal.h"
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "solenoid.h"
@@ -29,11 +29,70 @@
 
 #include "SEGGER_RTT.h"
 #include "SEGGER_RTT_Conf.h"
+#include "stm32f4xx_hal_tim.h"
+#include <stdint.h>
 
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
+
+typedef enum pianoNotesMapping{
+  triplet1 = 0,
+  triplet2,
+  triplet3,
+}pianoNotesMapping;
+
+typedef struct solenoidHandle_t {
+  void (* solenoidStrikeHandler)(void);
+  float position;
+} solenoidHandle_t;
+
+void triplet1_strike(void) {
+  Solenoid_Strike(1, 500);
+  HAL_Delay(500);
+  Solenoid_Strike(2, 500);
+  HAL_Delay(500);
+  Solenoid_Strike(3, 500);
+  HAL_Delay(500);
+
+};
+
+void triplet2_strike(void) {
+  Solenoid_Strike(1, 500);
+  Solenoid_Strike(4, 500);
+  HAL_Delay(500);
+
+  Solenoid_Strike(2, 500);
+  HAL_Delay(500);
+  Solenoid_Strike(3, 500);
+  HAL_Delay(500);
+};
+
+void triplet3_strike(void) {
+
+  Solenoid_Strike(1, 500);
+  Solenoid_Strike(5, 500);
+  HAL_Delay(500);
+  Solenoid_Strike(2, 500);
+  HAL_Delay(500);
+  Solenoid_Strike(3, 500);
+  HAL_Delay(500);
+};
+
+
+solenoidHandle_t solenoidArray[3u] ={
+  [triplet1] = {triplet1_strike, 700.0f},
+  [triplet2] = {triplet2_strike, 1500.0f},
+  [triplet3] = {triplet3_strike, 2500.0f}
+};
+
+pianoNotesMapping pianoNotes[32u] = {
+  triplet1, triplet2, triplet3, triplet1, triplet2, triplet3, triplet1, triplet2,
+  triplet3, triplet1, triplet2, triplet3, triplet1, triplet2, triplet3, triplet1,
+  triplet2, triplet3, triplet1, triplet2, triplet3, triplet1, triplet2, triplet3,
+  triplet1, triplet2, triplet3, triplet1, triplet2, triplet3, triplet1, triplet2
+};
 
 /* USER CODE END PTD */
 
@@ -44,16 +103,17 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-
+  static uint16_t counter = 0;
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-I2C_HandleTypeDef hi2c1;
-
 SPI_HandleTypeDef hspi1;
 
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
+TIM_HandleTypeDef htim6;
+
+
 
 /* USER CODE BEGIN PV */
 
@@ -62,10 +122,10 @@ TIM_HandleTypeDef htim3;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-static void MX_I2C1_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_TIM2_Init(void);
+static void MX_TIM6_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -73,10 +133,11 @@ static void MX_TIM2_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+Encoder_t encoder;
+
 /* USER CODE END 0 */
 
 /**
-  * @brief  The application entry point.
   * @retval int
   */
 int main(void)
@@ -85,6 +146,17 @@ int main(void)
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
+
+  /* Initilization of Variables */
+
+    // int pos;
+    // int vel;
+    // float dist;
+
+    // float target[5u] = {
+    //   0.0f, 10.0f, -10.0f, 20.0f, -20.0f
+    // };
+    // float duty_cycle;
 
   /* MCU Configuration--------------------------------------------------------*/
 
@@ -104,12 +176,11 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_I2C1_Init();
   MX_SPI1_Init();
   MX_TIM3_Init();
   MX_TIM2_Init();
+  MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
-  Encoder_t encoder;
   PID pid;
   const PID_Config PID_CONF = {
       .Kp = 1.0f,
@@ -136,9 +207,9 @@ int main(void)
   app_pid_init(&pid, &PID_CONF);
 
   Solenoid_Init();
+  HAL_TIM_Base_Start_IT(&htim6);
 
   /* USER CODE END 2 */
-
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
@@ -146,17 +217,11 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-
     // counterValue = TIM2->CNT;
     Encoder_Update(&encoder);
-    int pos = encoder.position;
-    int vel = encoder.velocity;
-    float dist = Encoder_CountsToMm(encoder.position);
-
-    float target = 500;
-
-    float duty_cycle = app_pid_compute(&pid, target, (float)encoder.position, 0.0f);
-    Motor_Update(duty_cycle, pid.error);
+    //dist = Encoder_CountsToMm(encoder.position);
+    Motor_Update(app_pid_compute(&pid, solenoidArray[pianoNotes[counter]].position, (float)encoder.position, 0.0f), 50.0f);
+    solenoidArray[pianoNotes[counter]].solenoidStrikeHandler();
   }
   /* USER CODE END 3 */
 }
@@ -200,40 +265,6 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-}
-
-/**
-  * @brief I2C1 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_I2C1_Init(void)
-{
-
-  /* USER CODE BEGIN I2C1_Init 0 */
-
-  /* USER CODE END I2C1_Init 0 */
-
-  /* USER CODE BEGIN I2C1_Init 1 */
-
-  /* USER CODE END I2C1_Init 1 */
-  hi2c1.Instance = I2C1;
-  hi2c1.Init.ClockSpeed = 100000;
-  hi2c1.Init.DutyCycle = I2C_DUTYCYCLE_2;
-  hi2c1.Init.OwnAddress1 = 0;
-  hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
-  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
-  hi2c1.Init.OwnAddress2 = 0;
-  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
-  hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
-  if (HAL_I2C_Init(&hi2c1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN I2C1_Init 2 */
-
-  /* USER CODE END I2C1_Init 2 */
-
 }
 
 /**
@@ -377,6 +408,44 @@ static void MX_TIM3_Init(void)
 }
 
 /**
+  * @brief TIM6 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM6_Init(void)
+{
+
+  /* USER CODE BEGIN TIM6_Init 0 */
+
+  /* USER CODE END TIM6_Init 0 */
+
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM6_Init 1 */
+
+  /* USER CODE END TIM6_Init 1 */
+  htim6.Instance = TIM6;
+  htim6.Init.Prescaler = TIM6prescaler;
+  htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim6.Init.Period = TIM6autoreload;
+  htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM6_Init 2 */
+
+  /* USER CODE END TIM6_Init 2 */
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -450,7 +519,17 @@ static void MX_GPIO_Init(void)
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
   /* USER CODE BEGIN Callback 0 */
+  if (htim->Instance == TIM6)
+  {
+    static uint16_t i = 0;
+    if (i == 3)
+    {
+      counter++;
+      if ( counter >= 3) counter = 0;
+   };
+    HAL_GPIO_TogglePin(DEBUG_GPIO_Port, DEBUG_Pin);
 
+  }
   /* USER CODE END Callback 0 */
   if (htim->Instance == TIM8)
   {

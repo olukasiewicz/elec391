@@ -1,0 +1,37 @@
+{
+    "version": "0.2.0",
+    "projectName": "main_controller",
+    "configurations":[
+        {
+            "name": "Debug Motor (J-Link)",
+            "cwd": "${workspaceRoot}",
+            "executable": "build/Debug/main_controller.elf",
+            "symbolFiles": [
+                "build/Debug/main_controller.elf"
+            ],
+            "request": "launch",
+            "type": "cortex-debug",
+            "servertype": "jlink",
+            "serverpath": "JLinkGDBServerCL",
+            "serverArgs": [
+                "-speed",
+                "4000"
+            ],
+            
+            "device": "STM32F412RG",
+            "interface": "swd",
+            "showDevDebugOutput": "none",
+            "rttConfig": {
+                "enabled": true,
+                "address": "auto",
+                "decoders": [
+                {
+                    "label": "Debug logs: Blinky",
+                    "port": 0,
+                    "type": "console"
+                }
+                ]
+            }
+        }
+    ]
+}
