@@ -91,8 +91,10 @@ void App_Tick(void)
     if (g_control_tick) {
         g_control_tick = false;
         App_ControlTick();
+        
+        Solenoid_TickAll();
     }
-    
+
     /* runs faster between control ticks*/
     switch (g_app_state) {
         case APP_BOOT:
@@ -165,7 +167,6 @@ void App_ControlTick(void)
             // Motor_SetTarget(float target)
             // Motor_Update(PID *pid, Encoder_t *enc)
             // Solenoid_Strike(uint8_t finger_idx, uint16_t strike_ms)
-            Solenoid_TickAll();
             if (!sol_triggered){
                 Solenoid_Strike(FINGER_WHITE_0, 1000);
                 Solenoid_Strike(FINGER_BLACK_1, 1000);
