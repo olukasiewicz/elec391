@@ -21,7 +21,7 @@ static const Sol_GPIO_t s_gpio[SOLENOID_COUNT] = {
 };
 
 /* ---- State array -------------------------------------------------- */
-static volatile Solenoid_t s_sol[SOLENOID_COUNT];
+static Solenoid_t s_sol[SOLENOID_COUNT];
 
 static inline void sol_set(uint8_t idx, bool on)
 {

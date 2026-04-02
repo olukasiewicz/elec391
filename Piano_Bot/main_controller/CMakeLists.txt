@@ -49,6 +49,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     Hardware/encoder.c
     Hardware/motor.c
     Hardware/app_pid.c
+    Hardware/note_player.c
 )
 
 # Add include paths

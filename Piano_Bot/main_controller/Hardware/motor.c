@@ -11,6 +11,7 @@
 
 #define POS_DEADBAND_COUNTS 10   
 
+static float motor_target = 0.0f;
 
 void set_pwm_duty(float duty_cycle)
 {
@@ -91,4 +92,21 @@ void Motor_Brake(void)
     set_pwm_duty(MOTOR_PWM_MAX);
     HAL_GPIO_WritePin(M1_GPIO_Port, M1_Pin, GPIO_PIN_SET);
     HAL_GPIO_WritePin(M2_GPIO_Port, M2_Pin, GPIO_PIN_SET);
+}
+
+/* ------------------------------------------------------------------ */
+
+void Motor_SetTarget(float target)
+{
+    motor_target = target;
+}
+
+float Motor_GetTarget(void)
+{
+    return motor_target;
+}
+
+bool Motor_AtTarget(const Encoder_t *enc)
+{
+    return abs(enc->position - motor_target) < POS_DEADBAND_COUNTS;
 }

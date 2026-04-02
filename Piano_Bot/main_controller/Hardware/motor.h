@@ -34,12 +34,12 @@ void Motor_Coast(void);
 void Motor_Brake(void);
  
 /* Set position target in encoder counts */
-void Motor_SetTarget(PID *pid, int32_t target_counts);
+void Motor_SetTarget(float target_counts);
  
 /* PID update — call at CONTROL_LOOP_HZ rate with current encoder */
 void Motor_Update(float PID_output, float PID_error);
  
 /* Returns true when position is within deadband of target */
-bool Motor_AtTarget(const PID *pid, const Encoder_t *enc);
+bool Motor_AtTarget(const Encoder_t *enc);
  
 #endif /* MOTOR_H */

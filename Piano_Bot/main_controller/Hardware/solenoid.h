@@ -18,9 +18,9 @@ typedef enum {
  
 typedef struct {
     Sol_State_t state;
-    volatile uint32_t    strike_time;    /* How long to play current note    */
-    volatile uint32_t    on_ticks;       /* How long currently energised     */
-    volatile uint32_t    off_ticks;      /* How long in cooldown             */
+    uint32_t    strike_time;    /* How long to play current note    */
+    uint32_t    on_ticks;       /* How long currently energised     */
+    uint32_t    off_ticks;      /* How long in cooldown             */
 } Solenoid_t;
  
 /* Initialise all solenoid GPIO pins (all OFF) */
