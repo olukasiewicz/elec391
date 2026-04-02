@@ -58,3 +58,5 @@ void NotePlayer_Run(NotePlayerState *state, PID *pid, const Encoder_t *encoder);
 
 /* Used for returning the global Note Playing state*/
 NotePlayerState *NotePlayer_GetState(void);
+
+bool NotePlayer_IsDone(void);

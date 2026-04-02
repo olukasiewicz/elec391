@@ -19,6 +19,8 @@
 #include "motor.h"
 #include "homing.h"
 #include "solenoid.h"
+#include "note_player.h"
+
 #include "stm32f4xx_hal_gpio.h"
 #include <stdbool.h>
 
@@ -75,8 +77,9 @@ void App_Init(void)
     Motor_Init();
     Encoder_Init(&g_encoder);
     Solenoid_Init();
-
     app_pid_init(&g_pid, &PID_CONF);
+    NotePlayer_Init();
+
     g_homing.state = HOMING_IDLE;
 
     // PianoMap_Init();
@@ -91,7 +94,7 @@ void App_Tick(void)
     if (g_control_tick) {
         g_control_tick = false;
         App_ControlTick();
-        
+        HAL_GPIO_TogglePin(DEBUG_GPIO_Port, DEBUG_Pin);
         Solenoid_TickAll();
     }
 
@@ -121,14 +124,15 @@ void App_Tick(void)
 
         case APP_PLAYING:
             /* stay until app is done playing */
-            if (1 /* player_IsDone()*/) {
+            if (NotePlayer_IsDone()) {
                 g_app_state = APP_DONE;
             }
             break;
         
         case APP_DONE:
             /* just jump back to idle */
-            g_app_state = APP_IDLE;
+            HAL_GPIO_WritePin(DEBUG_GPIO_Port, DEBUG_Pin, GPIO_PIN_SET);
+            //g_app_state = APP_IDLE;
             break;
 
         case APP_FAULT:
@@ -140,7 +144,6 @@ void App_Tick(void)
         default: 
             break;
     }
-    return;
 }
 
 bool sol_triggered = false;
@@ -167,20 +170,13 @@ void App_ControlTick(void)
             // Motor_SetTarget(float target)
             // Motor_Update(PID *pid, Encoder_t *enc)
             // Solenoid_Strike(uint8_t finger_idx, uint16_t strike_ms)
-            if (!sol_triggered){
-                Solenoid_Strike(FINGER_WHITE_0, 1000);
-                Solenoid_Strike(FINGER_BLACK_1, 1000);
-                Solenoid_Strike(FINGER_WHITE_2, 1000);
-                Solenoid_Strike(FINGER_WHITE_3, 1000);
-                Solenoid_Strike(FINGER_WHITE_4, 1000);
-                sol_triggered = true;
-            }
+            NotePlayer_Run(NotePlayer_GetState(), &g_pid, &g_encoder);
+            Motor_Update(&g_pid, &g_encoder);
             break;
 
         default:
             break;
     }
-    return;
 }
 
 /* ------------------------------------------------------------------ */

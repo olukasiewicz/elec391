@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-#define NOTE_DELAY_MS 1000
+#define NOTE_DELAY_MS 5000
 
 static NotePlayerState g_notePlayer;
 
@@ -103,4 +103,9 @@ void NotePlayer_Run(NotePlayerState *state, PID *pid, const Encoder_t *encoder)
 NotePlayerState *NotePlayer_GetState(void)
 {
     return &g_notePlayer;
+}
+
+
+bool NotePlayer_IsDone(void){
+    return g_notePlayer.finished;
 }
