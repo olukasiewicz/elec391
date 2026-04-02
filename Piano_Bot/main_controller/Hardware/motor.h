@@ -37,9 +37,9 @@ void Motor_Brake(void);
 void Motor_Update(PID *pid, Encoder_t *enc);
  
 /* Returns true when position is within deadband of target */
-bool Motor_AtTarget(const PID *pid, const Encoder_t *enc);
+bool Motor_AtTarget(const Encoder_t *enc);
 
-
+/* Sets motor target in counts*/
 void Motor_SetTarget(float target);
 
 

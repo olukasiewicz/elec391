@@ -50,6 +50,8 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     Hardware/motor.c
     Hardware/app_pid.c
     Hardware/homing.c
+    # ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/SEGGER_RTT_printf.c
+    # ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/SEGGER_RTT.c
 )
 
 # Add include paths

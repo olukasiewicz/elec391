@@ -9,12 +9,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define BACKOFF_MM      5.0f   /* mm to back off after switch triggers  */
-#define CONTROL_LOOP_HZ 1000
 #define TIMEOUT_TICKS   (HOMING_TIMEOUT_MS * CONTROL_LOOP_HZ / 1000u)
-
-#define MOTOR_HOMING_DUTY_CYCLE 50
-#define MOTOR_CREEP_DUTY_CYCLE 45
 
 static inline bool switch_active(void)
 {
@@ -61,7 +56,7 @@ Homing_State_t Homing_Update(Homing_t *h, Encoder_t *enc, PID *pid)
         case HOMING_BACKOFF:
             // update pid and drive motor
             Motor_Update(pid, enc);
-            if (abs(pid->error) <= POS_DEADBAND_COUNTS) {
+            if (Motor_AtTarget(enc)) {
                 app_pid_requestReset(pid);
                 h->state = HOMING_CREEP;
             }

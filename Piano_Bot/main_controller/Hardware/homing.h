@@ -9,8 +9,6 @@
 #include "encoder.h"
 #include <stdbool.h>
 
-#define HOMING_TIMEOUT_MS   5000u  /* Fault if homing not done in 5 s    */
-
 typedef enum {
     HOMING_IDLE        = 0,
     HOMING_MOVING      ,   /* Moving toward switch at homing speed     */

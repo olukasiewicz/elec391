@@ -25,7 +25,6 @@ extern TIM_HandleTypeDef htim3;   /* Solenoid PWM / tick timer (optional)   */
 #define ENCODER_PULLEY_MM       (50.0f * 3.14159265f) /* Circumference in mm   */
 /* counts per mm = (ENCODER_CPR * 4) / ENCODER_PULLEY_MM  — computed at runtime */
  
-
 /* ----------------------------------------------------------
  * SOLENOIDS
  * ---------------------------------------------------------- */
@@ -40,7 +39,20 @@ extern TIM_HandleTypeDef htim3;   /* Solenoid PWM / tick timer (optional)   */
 #define FINGER_WHITE_3   3u
 #define FINGER_WHITE_4   4u
 
+/* ----------------------------------------------------------
+ * MOTOR
+ * ---------------------------------------------------------- */
 #define POS_DEADBAND_COUNTS 10   
 
+/* ----------------------------------------------------------
+ * HOMING
+ * ---------------------------------------------------------- */
+#define HOMING_TIMEOUT_MS          100000u   /* Fault if homing not done in 5s    */
+#define MOTOR_HOMING_DUTY_CYCLE    40      /* speed towards 1st switch hit */
+#define MOTOR_CREEP_DUTY_CYCLE     35      /* speed for second switch hit */
+#define BACKOFF_MM                 25.0f     /* mm to back off after switch triggers  */
+ 
+
+#define CONTROL_LOOP_HZ 1000
 
 #endif /* PIANO_ROBOT_CONFIG_H */

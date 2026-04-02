@@ -105,3 +105,8 @@ float Motor_GetTarget(void)
 {
     return motor_target;
 }
+
+bool Motor_AtTarget(const Encoder_t *enc)
+{
+    return abs(enc->position - motor_target) < POS_DEADBAND_COUNTS;
+}
