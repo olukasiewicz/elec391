@@ -84,7 +84,7 @@ void Solenoid_Tick(uint8_t finger_idx)
             s->on_ticks++;
             /* Safety cutoff — never stay on beyond maximum */
             if (s->on_ticks >= SOL_MAX_ON_MS ||
-                s->on_ticks >= s->strike_time)
+                s->on_ticks > s->strike_time)
             {
                 sol_set(finger_idx, false);
                 s->state     = SOL_COOLDOWN;

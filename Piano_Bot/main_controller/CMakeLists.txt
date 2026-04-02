@@ -49,6 +49,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     Hardware/encoder.c
     Hardware/motor.c
     Hardware/homing.c
+    Hardware/note_player.c
     App/app_main.c
     App/app_pid.c
     # ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/SEGGER_RTT_printf.c
