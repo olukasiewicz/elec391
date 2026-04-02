@@ -21,13 +21,10 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "solenoid.h"
-#include "piano_robot_config.h"
-#include "motor.h"
-#include "encoder.h"
-#include "app_pid.h"
-#include "homing.h"
+#include "stm32f412rx.h"
 #include "stm32f4xx_hal.h"
+
+#include "app_main.h"
 
 #include "SEGGER_RTT.h"
 #include "SEGGER_RTT_Conf.h"
@@ -56,6 +53,7 @@ SPI_HandleTypeDef hspi1;
 
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
+TIM_HandleTypeDef htim6;
 
 /* USER CODE BEGIN PV */
 
@@ -68,6 +66,7 @@ static void MX_I2C1_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_TIM2_Init(void);
+static void MX_TIM6_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -110,37 +109,10 @@ int main(void)
   MX_SPI1_Init();
   MX_TIM3_Init();
   MX_TIM2_Init();
+  MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
-  static Encoder_t g_encoder;
-  static PID g_pid;
-  static Homing_t g_homing;
-  const PID_Config PID_CONF = {
-      .Kp = 1.0f,
-      .Ki = 0.0f,
-      .Kd = 0.0f,
-      .Kb = 0.0f,
-
-      .Kff = 0.0f,
-      .smoothing_coeff = 0.0f,
-
-      .out_max = 100.0f,
-      .out_min = -100.0f,
-      .max_integral = 50.0f,
-      .min_integral = -50.0f,
-
-      .clamp_output = true,
-      .clamp_integral = true,
-      .back_calculation = false,
-      .feed_forward = false,
-      .sample_time = 0.001f
-  };
-  Encoder_Init(&g_encoder);
-  Solenoid_Init();
-  Motor_Init();
-  app_pid_init(&g_pid, &PID_CONF);
-
-  g_homing.state = HOMING_IDLE;
-  Homing_Start(&g_homing);
+  HAL_TIM_Base_Start_IT(&htim6);
+  App_Init();
 
   /* USER CODE END 2 */
 
@@ -151,18 +123,8 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    Homing_State_t hs = Homing_Update(&g_homing, &g_encoder, &g_pid);
-    if (hs == HOMING_COMPLETE){
-      app_pid_requestReset(&g_pid);
-      
-    } 
-    else if (hs == HOMING_FAULT) {
-      Motor_Brake();
-      continue;
-    }
-    
-    // Motor_SetTarget(-500);
-    // Motor_Update(&g_pid, &g_encoder);
+    App_Tick();
+
   }
   /* USER CODE END 3 */
 }
@@ -383,6 +345,44 @@ static void MX_TIM3_Init(void)
 }
 
 /**
+  * @brief TIM6 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM6_Init(void)
+{
+
+  /* USER CODE BEGIN TIM6_Init 0 */
+
+  /* USER CODE END TIM6_Init 0 */
+
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM6_Init 1 */
+
+  /* USER CODE END TIM6_Init 1 */
+  htim6.Instance = TIM6;
+  htim6.Init.Prescaler = TIM6prescaler;
+  htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim6.Init.Period = 16000;
+  htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM6_Init 2 */
+
+  /* USER CODE END TIM6_Init 2 */
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -469,7 +469,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     HAL_IncTick();
   }
   /* USER CODE BEGIN Callback 1 */
-
+  if (htim->Instance == TIM6)
+  {
+    App_SetControlFlag();
+  }
   /* USER CODE END Callback 1 */
 }
 

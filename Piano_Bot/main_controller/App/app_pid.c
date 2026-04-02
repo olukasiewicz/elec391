@@ -1,5 +1,4 @@
 #include "app_pid.h"
-// #include "app_utils.h"
 #include <assert.h>
 
 #ifndef MIN
