@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "homing.h"
 #include "stm32f4xx_hal.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -109,8 +110,9 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-  Encoder_t encoder;
-  PID pid;
+  static Encoder_t g_encoder;
+  static PID g_pid;
+  static Homing_t g_homing;
   const PID_Config PID_CONF = {
       .Kp = 1.0f,
       .Ki = 0.0f,
@@ -131,11 +133,13 @@ int main(void)
       .feed_forward = false,
       .sample_time = 0.001f
   };
-  Encoder_Init(&encoder);
-  Motor_Init();
-  app_pid_init(&pid, &PID_CONF);
-
+  Encoder_Init(&g_encoder);
   Solenoid_Init();
+  Motor_Init();
+  app_pid_init(&g_pid, &PID_CONF);
+
+  g_homing.state = HOMING_IDLE;
+  Homing_Start(&g_homing);
 
   /* USER CODE END 2 */
 
@@ -146,17 +150,17 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    Homing_State_t hs = Homing_Update(&g_homing, &g_encoder, &g_pid);
+    if (hs == HOMING_COMPLETE){
+      app_pid_requestReset(&g_pid);
 
-    // counterValue = TIM2->CNT;
-    Encoder_Update(&encoder);
-    int pos = encoder.position;
-    int vel = encoder.velocity;
-    float dist = Encoder_CountsToMm(encoder.position);
-
-    float target = 500;
+    } 
+    else if (hs == HOMING_FAULT) {
+      continue;
+    }
     
-    float duty_cycle = app_pid_compute(&pid, target, (float)encoder.position, 0.0f);
-    Motor_Update(duty_cycle, pid.error);
+    // Motor_SetTarget(500);
+    // Motor_Update(&pid, &encoder);
   }
   /* USER CODE END 3 */
 }

@@ -40,6 +40,7 @@ extern TIM_HandleTypeDef htim3;   /* Solenoid PWM / tick timer (optional)   */
 #define FINGER_WHITE_3   3u
 #define FINGER_WHITE_4   4u
 
+#define POS_DEADBAND_COUNTS 10   
 
 
 #endif /* PIANO_ROBOT_CONFIG_H */
