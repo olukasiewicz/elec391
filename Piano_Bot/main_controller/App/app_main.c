@@ -29,13 +29,13 @@ static Encoder_t    g_encoder;
 static Homing_t     g_homing;
 static PID          g_pid;
 const PID_Config PID_CONF = {
-    .Kp = 1.0f,
-    .Ki = 0.0f,
-    .Kd = 0.0f,
+    .Kp = 5.0f,
+    .Ki = 5.0f,
+    .Kd = 0.05f,
     .Kb = 0.0f,
 
-    .Kff = 0.0f,
-    .smoothing_coeff = 0.0f,
+    .Kff = 0.5f,
+    .smoothing_coeff = 0.2f,
 
     .out_max = 100.0f,
     .out_min = -100.0f,
@@ -45,7 +45,7 @@ const PID_Config PID_CONF = {
     .clamp_output = true,
     .clamp_integral = true,
     .back_calculation = false,
-    .feed_forward = false,
+    .feed_forward = true,
     .sample_time = 0.001f
 };
 // static Sequencer_t  g_sequencer;
@@ -92,7 +92,7 @@ void App_Tick(void)
         g_control_tick = false;
         App_ControlTick();
     }
-
+    
     /* runs faster between control ticks*/
     switch (g_app_state) {
         case APP_BOOT:
@@ -103,6 +103,7 @@ void App_Tick(void)
             /* after App_Init(), wait for home button to start*/
             if (HAL_GPIO_ReadPin(Home_Button_GPIO_Port, Home_Button_Pin) == GPIO_PIN_SET){
                 g_app_state = APP_HOMING;
+                g_app_state = APP_READY; // TODO ---------------------------- DELETE
             }
             break;  
         
@@ -137,14 +138,19 @@ void App_Tick(void)
         default: 
             break;
     }
+    return;
 }
 
-
+bool sol_triggered = false;
 /* ------------------------------------------------------------------ */
 /* Call from high-rate timer ISR (CONTROL_LOOP_HZ)                    */
 void App_ControlTick(void)
 {
     switch (g_app_state) {
+        case APP_READY:
+            /* TODO delete state */
+            break;
+
         case APP_HOMING:
             Homing_State_t hs = Homing_Update(&g_homing, &g_encoder, &g_pid);
             if (hs == HOMING_COMPLETE){
@@ -159,11 +165,21 @@ void App_ControlTick(void)
             // Motor_SetTarget(float target)
             // Motor_Update(PID *pid, Encoder_t *enc)
             // Solenoid_Strike(uint8_t finger_idx, uint16_t strike_ms)
+            Solenoid_TickAll();
+            if (!sol_triggered){
+                Solenoid_Strike(FINGER_WHITE_0, 1000);
+                Solenoid_Strike(FINGER_BLACK_1, 1000);
+                Solenoid_Strike(FINGER_WHITE_2, 1000);
+                Solenoid_Strike(FINGER_WHITE_3, 1000);
+                Solenoid_Strike(FINGER_WHITE_4, 1000);
+                sol_triggered = true;
+            }
             break;
 
         default:
             break;
     }
+    return;
 }
 
 /* ------------------------------------------------------------------ */
