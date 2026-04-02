@@ -18,7 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "stm32f4xx_hal.h"
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "solenoid.h"
@@ -26,6 +26,8 @@
 #include "motor.h"
 #include "encoder.h"
 #include "app_pid.h"
+#include "homing.h"
+#include "stm32f4xx_hal.h"
 
 #include "SEGGER_RTT.h"
 #include "SEGGER_RTT_Conf.h"
@@ -109,8 +111,9 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-  Encoder_t encoder;
-  PID pid;
+  static Encoder_t g_encoder;
+  static PID g_pid;
+  static Homing_t g_homing;
   const PID_Config PID_CONF = {
       .Kp = 1.0f,
       .Ki = 0.0f,
@@ -131,11 +134,13 @@ int main(void)
       .feed_forward = false,
       .sample_time = 0.001f
   };
-  Encoder_Init(&encoder);
-  Motor_Init();
-  app_pid_init(&pid, &PID_CONF);
-
+  Encoder_Init(&g_encoder);
   Solenoid_Init();
+  Motor_Init();
+  app_pid_init(&g_pid, &PID_CONF);
+
+  g_homing.state = HOMING_IDLE;
+  Homing_Start(&g_homing);
 
   /* USER CODE END 2 */
 
@@ -146,17 +151,18 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-
-    // counterValue = TIM2->CNT;
-    Encoder_Update(&encoder);
-    int pos = encoder.position;
-    int vel = encoder.velocity;
-    float dist = Encoder_CountsToMm(encoder.position);
-
-    float target = 500;
-
-    float duty_cycle = app_pid_compute(&pid, target, (float)encoder.position, 0.0f);
-    Motor_Update(duty_cycle, pid.error);
+    Homing_State_t hs = Homing_Update(&g_homing, &g_encoder, &g_pid);
+    if (hs == HOMING_COMPLETE){
+      app_pid_requestReset(&g_pid);
+      
+    } 
+    else if (hs == HOMING_FAULT) {
+      Motor_Brake();
+      continue;
+    }
+    
+    // Motor_SetTarget(-500);
+    // Motor_Update(&g_pid, &g_encoder);
   }
   /* USER CODE END 3 */
 }
@@ -417,11 +423,17 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(Solenoid_CTRL1_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : Home_Button_Pin Home_SENS_Pin */
-  GPIO_InitStruct.Pin = Home_Button_Pin|Home_SENS_Pin;
+  /*Configure GPIO pin : Home_Button_Pin */
+  GPIO_InitStruct.Pin = Home_Button_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(Home_Button_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : Home_SENS_Pin */
+  GPIO_InitStruct.Pin = Home_SENS_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(Home_SENS_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : DEBUG_Pin */
   GPIO_InitStruct.Pin = DEBUG_Pin;
