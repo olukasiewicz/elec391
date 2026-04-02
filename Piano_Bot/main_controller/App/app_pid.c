@@ -1,5 +1,4 @@
 #include "app_pid.h"
-// #include "app_utils.h"
 #include <assert.h>
 
 #ifndef MIN
@@ -54,7 +53,7 @@ void app_pid_init(PID *pid, const PID_Config *conf)
  * @param disturbance feedforward/"disturbance" variable
  * @return controller output/"effort"
  */
-float app_pid_compute(PID *pid, const float setpoint, const float input, float disturbance)
+float app_pid_compute(PID *pid, const float setpoint, const float   input, float disturbance)
 {
     pid->error = setpoint - input;
 

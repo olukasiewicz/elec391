@@ -63,9 +63,11 @@ void Error_Handler(void);
 #define TIM3frequency 1000
 #define TIM6frequency 1000
 #define TIM6autoreload TIMxfrequency/((TIM6prescaler+1)*TIM6frequency)
-#define TIM6prescaler 999
 #define TIM3prescaler 0
 #define TIMxfrequency 16000000
+#define TIM6prescaler 0
+#define TIM6frequency 1000
+#define TIM6autoreload TIMxfrequency/((Tim6prescaler+1)*Tim6frequency)
 #define SENSE_A_Pin GPIO_PIN_0
 #define SENSE_A_GPIO_Port GPIOA
 #define SENSE_B_Pin GPIO_PIN_1

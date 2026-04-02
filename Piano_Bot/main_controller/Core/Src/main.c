@@ -21,12 +21,10 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "solenoid.h"
-#include "piano_robot_config.h"
-#include "motor.h"
-#include "encoder.h"
-#include "app_pid.h"
-#include "note_player.h"
+#include "stm32f412rx.h"
+#include "stm32f4xx_hal.h"
+
+#include "app_main.h"
 
 #include "SEGGER_RTT.h"
 #include "SEGGER_RTT_Conf.h"
@@ -57,7 +55,6 @@ SPI_HandleTypeDef hspi1;
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim6;
-TIM_HandleTypeDef htim7;
 
 /* USER CODE BEGIN PV */
 /* USER CODE END PV */
@@ -69,7 +66,6 @@ static void MX_SPI1_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_TIM6_Init(void);
-static void MX_TIM7_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -114,40 +110,9 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM2_Init();
   MX_TIM6_Init();
-  MX_TIM7_Init();
   /* USER CODE BEGIN 2 */
-
-  PID pid;
-  const PID_Config PID_CONF = {
-      .Kp = 1.0f,
-      .Ki = 0.0f,
-      .Kd = 0.0f,
-      .Kb = 0.0f,
-
-      .Kff = 0.0f,
-      .smoothing_coeff = 0.0f,
-
-      .out_max = 100.0f,
-      .out_min = -100.0f,
-      .max_integral = 50.0f,
-      .min_integral = -50.0f,
-
-      .clamp_output = true,
-      .clamp_integral = true,
-      .back_calculation = false,
-      .feed_forward = false,
-      .sample_time = 0.001f
-  };
-
-  /* Initializing Functions */
-  Encoder_Init(&encoder);
-  Motor_Init();
-  Solenoid_Init();
-  NotePlayer_Init();
-  app_pid_init(&pid, &PID_CONF);
-
   HAL_TIM_Base_Start_IT(&htim6);
-  HAL_TIM_Base_Start_IT(&htim7);
+  App_Init();
 
   /* USER CODE END 2 */
 
@@ -158,9 +123,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    Encoder_Update(&encoder);
-    
-    NotePlayer_Run(NotePlayer_GetState(), &pid, &encoder);
+    App_Tick();
 
   }
   /* USER CODE END 3 */
@@ -367,13 +330,13 @@ static void MX_TIM6_Init(void)
   htim6.Instance = TIM6;
   htim6.Init.Prescaler = TIM6prescaler;
   htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim6.Init.Period = TIM6autoreload;
+  htim6.Init.Period = 16000;
   htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
   {
     Error_Handler();
   }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   if (HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig) != HAL_OK)
   {
@@ -382,36 +345,6 @@ static void MX_TIM6_Init(void)
   /* USER CODE BEGIN TIM6_Init 2 */
 
   /* USER CODE END TIM6_Init 2 */
-
-}
-
-/**
-  * @brief TIM7 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_TIM7_Init(void)
-{
-
-  /* USER CODE BEGIN TIM7_Init 0 */
-
-  /* USER CODE END TIM7_Init 0 */
-
-  /* USER CODE BEGIN TIM7_Init 1 */
-
-  /* USER CODE END TIM7_Init 1 */
-  htim7.Instance = TIM7;
-  htim7.Init.Prescaler = 15;
-  htim7.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim7.Init.Period = 999;
-  htim7.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
-  if (HAL_TIM_Base_Init(&htim7) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN TIM7_Init 2 */
-
-  /* USER CODE END TIM7_Init 2 */
 
 }
 
@@ -456,11 +389,17 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(Solenoid_CTRL1_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : Home_Button_Pin Home_SENS_Pin */
-  GPIO_InitStruct.Pin = Home_Button_Pin|Home_SENS_Pin;
+  /*Configure GPIO pin : Home_Button_Pin */
+  GPIO_InitStruct.Pin = Home_Button_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(Home_Button_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : Home_SENS_Pin */
+  GPIO_InitStruct.Pin = Home_SENS_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(Home_SENS_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : DEBUG_Pin */
   GPIO_InitStruct.Pin = DEBUG_Pin;
@@ -503,7 +442,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     HAL_IncTick();
   }
   /* USER CODE BEGIN Callback 1 */
-
+  if (htim->Instance == TIM6)
+  {
+    App_SetControlFlag();
+  }
   /* USER CODE END Callback 1 */
 }
 

@@ -48,14 +48,19 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     Hardware/solenoid.c
     Hardware/encoder.c
     Hardware/motor.c
-    Hardware/app_pid.c
+    Hardware/homing.c
     Hardware/note_player.c
+    App/app_main.c
+    App/app_pid.c
+    # ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/SEGGER_RTT_printf.c
+    # ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/SEGGER_RTT.c
 )
 
 # Add include paths
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined include paths
     ${CMAKE_SOURCE_DIR}/Hardware
+    ${CMAKE_SOURCE_DIR}/App
 )
 
 # Add project symbols (macros)

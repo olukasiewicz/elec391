@@ -33,13 +33,16 @@ void Motor_Coast(void);
 /* Active braking (both low-side on) */
 void Motor_Brake(void);
  
-/* Set position target in encoder counts */
-void Motor_SetTarget(float target_counts);
- 
 /* PID update — call at CONTROL_LOOP_HZ rate with current encoder */
-void Motor_Update(float PID_output, float PID_error);
+void Motor_Update(PID *pid, Encoder_t *enc);
  
 /* Returns true when position is within deadband of target */
 bool Motor_AtTarget(const Encoder_t *enc);
+
+/* Sets motor target in counts*/
+void Motor_SetTarget(float target);
+
+
+float Motor_GetTarget(void);
  
 #endif /* MOTOR_H */
