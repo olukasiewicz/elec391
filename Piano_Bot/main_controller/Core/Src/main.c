@@ -29,6 +29,7 @@
 
 #include "SEGGER_RTT.h"
 #include "SEGGER_RTT_Conf.h"
+#include "stm32f4xx_hal.h"
 #include "stm32f4xx_hal_tim.h"
 #include <stdint.h>
 
@@ -36,6 +37,8 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
+volatile uint32_t startTime;
+volatile uint32_t currTime;
 
 typedef enum pianoNotesMapping{
   triplet1 = 0,
@@ -49,49 +52,42 @@ typedef struct solenoidHandle_t {
 } solenoidHandle_t;
 
 void triplet1_strike(void) {
-  Solenoid_Strike(1, 500);
-  HAL_Delay(500);
-  Solenoid_Strike(2, 500);
-  HAL_Delay(500);
-  Solenoid_Strike(3, 500);
-  HAL_Delay(500);
 
+  currTime = HAL_GetTick();
+  uint32_t thing = currTime - startTime;
+  if (thing < 1000) 
+  {  // Example condition, adjust as needed
+      Solenoid_Strike(0, 1);
+  } else if ( thing < 20000 && thing > 1000)
+  {
+      Solenoid_Strike(1, 1);
+  }
 };
 
 void triplet2_strike(void) {
-  Solenoid_Strike(1, 500);
-  Solenoid_Strike(4, 500);
-  HAL_Delay(500);
-
-  Solenoid_Strike(2, 500);
-  HAL_Delay(500);
-  Solenoid_Strike(3, 500);
-  HAL_Delay(500);
+  
+  Solenoid_Strike(1, 3);
 };
 
-void triplet3_strike(void) {
+// void triplet3_strike(void) {
 
-  Solenoid_Strike(1, 500);
-  Solenoid_Strike(5, 500);
-  HAL_Delay(500);
-  Solenoid_Strike(2, 500);
-  HAL_Delay(500);
-  Solenoid_Strike(3, 500);
-  HAL_Delay(500);
-};
+//   Solenoid_Strike(1, 500);
+//   Solenoid_Strike(5, 500);
+//   HAL_Delay(500);
+//   Solenoid_Strike(2, 500);
+//   HAL_Delay(500);
+//   Solenoid_Strike(3, 500);
+//   HAL_Delay(500);
+// };
 
-
-solenoidHandle_t solenoidArray[3u] ={
+solenoidHandle_t solenoidArray[] ={
   [triplet1] = {triplet1_strike, 700.0f},
   [triplet2] = {triplet2_strike, 1500.0f},
-  [triplet3] = {triplet3_strike, 2500.0f}
+  // [triplet3] = {triplet3_strike, 0.0f}
 };
 
-pianoNotesMapping pianoNotes[32u] = {
-  triplet1, triplet2, triplet3, triplet1, triplet2, triplet3, triplet1, triplet2,
-  triplet3, triplet1, triplet2, triplet3, triplet1, triplet2, triplet3, triplet1,
-  triplet2, triplet3, triplet1, triplet2, triplet3, triplet1, triplet2, triplet3,
-  triplet1, triplet2, triplet3, triplet1, triplet2, triplet3, triplet1, triplet2
+pianoNotesMapping pianoNotes[2u] = {
+  triplet1, triplet2
 };
 
 /* USER CODE END PTD */
@@ -112,11 +108,9 @@ SPI_HandleTypeDef hspi1;
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim6;
-
-
+TIM_HandleTypeDef htim7;
 
 /* USER CODE BEGIN PV */
-
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -126,6 +120,7 @@ static void MX_SPI1_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_TIM6_Init(void);
+static void MX_TIM7_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -138,6 +133,7 @@ Encoder_t encoder;
 /* USER CODE END 0 */
 
 /**
+  * @brief  The application entry point.
   * @retval int
   */
 int main(void)
@@ -146,17 +142,6 @@ int main(void)
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
-
-  /* Initilization of Variables */
-
-    // int pos;
-    // int vel;
-    // float dist;
-
-    // float target[5u] = {
-    //   0.0f, 10.0f, -10.0f, 20.0f, -20.0f
-    // };
-    // float duty_cycle;
 
   /* MCU Configuration--------------------------------------------------------*/
 
@@ -180,7 +165,9 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM2_Init();
   MX_TIM6_Init();
+  MX_TIM7_Init();
   /* USER CODE BEGIN 2 */
+
   PID pid;
   const PID_Config PID_CONF = {
       .Kp = 1.0f,
@@ -205,11 +192,13 @@ int main(void)
   Encoder_Init(&encoder);
   Motor_Init();
   app_pid_init(&pid, &PID_CONF);
-
   Solenoid_Init();
   HAL_TIM_Base_Start_IT(&htim6);
 
+  // Declaring Start Time
+
   /* USER CODE END 2 */
+
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
@@ -220,7 +209,9 @@ int main(void)
     // counterValue = TIM2->CNT;
     Encoder_Update(&encoder);
     //dist = Encoder_CountsToMm(encoder.position);
-    Motor_Update(app_pid_compute(&pid, solenoidArray[pianoNotes[counter]].position, (float)encoder.position, 0.0f), 50.0f);
+
+    float duty_cycle = app_pid_compute(&pid, 1400, (float)encoder.position, 0.0f);
+    Motor_Update(duty_cycle, pid.error);
     solenoidArray[pianoNotes[counter]].solenoidStrikeHandler();
   }
   /* USER CODE END 3 */
@@ -446,6 +437,36 @@ static void MX_TIM6_Init(void)
 }
 
 /**
+  * @brief TIM7 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM7_Init(void)
+{
+
+  /* USER CODE BEGIN TIM7_Init 0 */
+
+  /* USER CODE END TIM7_Init 0 */
+
+  /* USER CODE BEGIN TIM7_Init 1 */
+
+  /* USER CODE END TIM7_Init 1 */
+  htim7.Instance = TIM7;
+  htim7.Init.Prescaler = 15;
+  htim7.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim7.Init.Period = 999;
+  htim7.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  if (HAL_TIM_Base_Init(&htim7) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM7_Init 2 */
+
+  /* USER CODE END TIM7_Init 2 */
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -521,13 +542,21 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   /* USER CODE BEGIN Callback 0 */
   if (htim->Instance == TIM6)
   {
+    // Counter is for playing a new note every 3 seconds
     static uint16_t i = 0;
     if (i == 3)
     {
       counter++;
-      if ( counter >= 3) counter = 0;
+      startTime = HAL_GetTick();
+      if ( counter >= 2) counter = 0; // Counter is number of total notes to be played
    };
+   
+    // Interrupt every 1ms
     HAL_GPIO_TogglePin(DEBUG_GPIO_Port, DEBUG_Pin);
+    
+    for(int j = 0; j < SOLENOID_COUNT; j++){
+      Solenoid_Tick(j);
+    };
 
   }
   /* USER CODE END Callback 0 */
