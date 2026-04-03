@@ -151,12 +151,14 @@ bool sol_triggered = false;
 /* Call from high-rate timer ISR (CONTROL_LOOP_HZ)                    */
 void App_ControlTick(void)
 {
+    Encoder_Update(&g_encoder);
+
     switch (g_app_state) {
         case APP_READY:
             /* TODO delete state */
             break;
 
-        case APP_HOMING:
+        case APP_HOMING: {
             Homing_State_t hs = Homing_Update(&g_homing, &g_encoder, &g_pid);
             if (hs == HOMING_COMPLETE){
                 g_app_state = APP_READY;
@@ -164,6 +166,7 @@ void App_ControlTick(void)
                 g_app_state = APP_FAULT;
             }
             break;
+        }
         
         case APP_PLAYING:
             // TODO: call sequencer function

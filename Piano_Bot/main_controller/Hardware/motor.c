@@ -40,7 +40,6 @@ void Motor_Init(void)
 /* ------------------------------------------------------------------ */
 void Motor_Update(PID *pid, Encoder_t *enc)
 {
-    Encoder_Update(enc);
     float duty_cycle = app_pid_compute(pid, motor_target, enc->position, 0.0f);
 
     float abs_duty_cycle = fabsf(duty_cycle);
