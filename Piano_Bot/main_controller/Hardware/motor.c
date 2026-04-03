@@ -33,6 +33,7 @@ void Motor_Init(void)
     /* Start PWM */
     HAL_TIM_PWM_Start(&MOTOR_PWM_TIM, TIM_CHANNEL_3);
     HAL_TIM_PWM_Start(&MOTOR_PWM_TIM, TIM_CHANNEL_4);
+    motor_target = 0.0f;
     Motor_Brake();
 }
 

@@ -100,6 +100,7 @@ void Solenoid_Tick(uint8_t finger_idx)
             break;
  
         case SOL_IDLE:
+            break;
         default:
             break;
     }

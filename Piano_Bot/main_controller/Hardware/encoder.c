@@ -7,9 +7,6 @@
 #include <math.h>
 
 // #define ENCODER_TIM htim2
-
-#define ENCODER_CPR             1024u        /* Counts per revolution (×4 mode) */
-#define ENCODER_PULLEY_MM       (50.0f * 3.14159265f) /* Circumference in mm   */
 /* counts per mm = (ENCODER_CPR * 4) / ENCODER_PULLEY_MM  — computed at runtime */
  
 /* Counts per mm (computed once at init) */

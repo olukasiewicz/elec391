@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-#define NOTE_DELAY_MS 5000
+#define NOTE_DELAY_MS 1000
 
 static NotePlayerState g_notePlayer;
 
