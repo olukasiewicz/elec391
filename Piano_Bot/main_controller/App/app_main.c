@@ -31,23 +31,23 @@ static Encoder_t    g_encoder;
 static Homing_t     g_homing;
 static PID          g_pid;
 const PID_Config PID_CONF = {
-    .Kp = 5.0f,
-    .Ki = 5.0f,
-    .Kd = 0.05f,
+    .Kp = 1.0f, //5
+    .Ki = 0.0f, // 5
+    .Kd = 0.5f, //0.05
     .Kb = 0.0f,
 
-    .Kff = 0.5f,
-    .smoothing_coeff = 0.2f,
+    .Kff = 0.0f, // 0.5
+    .smoothing_coeff = 0.0f, // 0.2
 
-    .out_max = 100.0f,
-    .out_min = -100.0f,
+    .out_max = 95.0f,
+    .out_min = -95.0f,
     .max_integral = 50.0f,
     .min_integral = -50.0f,
 
     .clamp_output = true,
     .clamp_integral = true,
     .back_calculation = false,
-    .feed_forward = true,
+    .feed_forward = false, // true
     .sample_time = 0.001f
 };
 // static Sequencer_t  g_sequencer;
