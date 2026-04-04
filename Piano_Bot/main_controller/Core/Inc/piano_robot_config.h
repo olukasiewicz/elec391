@@ -42,17 +42,22 @@ extern TIM_HandleTypeDef htim3;   /* Solenoid PWM / tick timer (optional)   */
 /* ----------------------------------------------------------
  * MOTOR
  * ---------------------------------------------------------- */
-#define POS_DEADBAND_COUNTS 10   
+#define POS_DEADBAND_COUNTS 8   
+#define MAX_DUTY_FORWARD 50.0f
+#define MAX_DUTY_REVERSE -50.0f
 
 /* ----------------------------------------------------------
  * HOMING
  * ---------------------------------------------------------- */
 #define HOMING_TIMEOUT_MS          100000u   /* Fault if homing not done in 5s    */
-#define MOTOR_HOMING_DUTY_CYCLE    40      /* speed towards 1st switch hit */
-#define MOTOR_CREEP_DUTY_CYCLE     35      /* speed for second switch hit */
+#define MOTOR_HOMING_DUTY_CYCLE    45      /* speed towards 1st switch hit */
+#define MOTOR_CREEP_DUTY_CYCLE     45      /* speed for second switch hit */
 #define BACKOFF_MM                 25.0f     /* mm to back off after switch triggers  */
  
 
 #define CONTROL_LOOP_HZ 1000
+
+#define SKIP_HOMING 1
+#define MOTOR_ALWAYS_AT_TARGET 1
 
 #endif /* PIANO_ROBOT_CONFIG_H */
