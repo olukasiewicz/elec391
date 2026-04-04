@@ -23,7 +23,8 @@ static const BaseEvent eventArray[] = {
     {EVENT_SINGLE, {true, false, false, false, false}, QUARTER_TIME, 0, 0},
     {EVENT_SINGLE, {true, false, false, false, false}, EIGTH_TIME, 0, 700},
     {EVENT_SINGLE, {false, false, true, false, false}, EIGTH_TIME, 0, 700},
-    {EVENT_SINGLE, {false, false, false, true, false}, EIGTH_TIME, 500, 700},
+    {EVENT_SINGLE, {false, false, false, true, false}, EIGTH_TIME, 0, 700},
+    {EVENT_SINGLE, {false, false, false, false, true}, EIGTH_TIME, 500, 700},
     {EVENT_DOUBLE, {true, true, false, false, false}, QUARTER_TIME, 0, 1500},
 };
 
