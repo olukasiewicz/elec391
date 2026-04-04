@@ -44,5 +44,7 @@ void Solenoid_TickAll(void);
  
 /* Query if a finger is currently available (not striking/cooling) */
 bool Solenoid_IsReady(uint8_t finger_idx);
+
+bool Solenoid_AllReady(void);
  
 #endif /* SOLENOID_H */

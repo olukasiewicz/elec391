@@ -33,14 +33,14 @@ static PID          g_pid;
 const PID_Config PID_CONF = {
     .Kp = 1.0f, //5
     .Ki = 0.0f, // 5
-    .Kd = 0.5f, //0.05
+    .Kd = 0.00f, //0.05
     .Kb = 0.0f,
 
     .Kff = 0.0f, // 0.5
     .smoothing_coeff = 0.0f, // 0.2
 
-    .out_max = 95.0f,
-    .out_min = -95.0f,
+    .out_max = MAX_DUTY_FORWARD,
+    .out_min = MAX_DUTY_REVERSE,
     .max_integral = 50.0f,
     .min_integral = -50.0f,
 
@@ -81,10 +81,6 @@ void App_Init(void)
     NotePlayer_Init();
 
     g_homing.state = HOMING_IDLE;
-
-    // PianoMap_Init();
-    // Sequencer_Init(&g_sequencer);
-
     g_app_state = APP_IDLE;
 }
 
@@ -107,8 +103,13 @@ void App_Tick(void)
         case APP_IDLE:
             /* after App_Init(), wait for home button to start*/
             if (HAL_GPIO_ReadPin(Home_Button_GPIO_Port, Home_Button_Pin) == GPIO_PIN_SET){
-                g_app_state = APP_HOMING;
-                g_app_state = APP_READY; // TODO ---------------------------- DELETE
+                if (!SKIP_HOMING){
+                    Homing_Start(&g_homing);
+                    g_app_state = APP_HOMING;
+                } else {
+                    g_app_state = APP_READY; // skip homing process
+                }
+                NotePlayer_Init();
             }
             break;  
         
@@ -132,12 +133,12 @@ void App_Tick(void)
         case APP_DONE:
             /* just jump back to idle */
             HAL_GPIO_WritePin(DEBUG_GPIO_Port, DEBUG_Pin, GPIO_PIN_SET);
-            //g_app_state = APP_IDLE;
+            g_app_state = APP_IDLE;
             break;
 
         case APP_FAULT:
             /* some fault */
-            Motor_Brake();
+            Motor_Coast();
             Solenoid_ReleaseAll();
             break;
 
@@ -162,6 +163,7 @@ void App_ControlTick(void)
             Homing_State_t hs = Homing_Update(&g_homing, &g_encoder, &g_pid);
             if (hs == HOMING_COMPLETE){
                 g_app_state = APP_READY;
+                g_app_state = APP_DONE;
             } else if (hs == HOMING_FAULT) {
                 g_app_state = APP_FAULT;
             }
@@ -169,10 +171,6 @@ void App_ControlTick(void)
         }
         
         case APP_PLAYING:
-            // TODO: call sequencer function
-            // Motor_SetTarget(float target)
-            // Motor_Update(PID *pid, Encoder_t *enc)
-            // Solenoid_Strike(uint8_t finger_idx, uint16_t strike_ms)
             NotePlayer_Run(NotePlayer_GetState(), &g_pid, &g_encoder);
             Motor_Update(&g_pid, &g_encoder);
             break;

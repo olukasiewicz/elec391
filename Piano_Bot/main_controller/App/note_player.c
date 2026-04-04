@@ -3,109 +3,114 @@
 #include "piano_robot_config.h"
 #include "main.h"
 #include "solenoid.h"
+#include "stm32f4xx_hal.h"
 #include "note_player.h"
+
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <math.h>
 
-#define NOTE_DELAY_MS 1000
 
-static NotePlayerState g_notePlayer;
+#define BPM 120
+#define QUARTER_TIME 60000 / BPM // 500 at 120bpm
+#define EIGTH_TIME 30000 / BPM // 250 at 120bpm
+
+
+static NotePlayer_t g_notePlayer;
+uint32_t note_delay_ms = 0;
 
 static const BaseEvent eventArray[] = {
-    {EVENT_SINGLE, {true, false, false, false, false}, 500, 1000, 0},
-    {EVENT_SINGLE, {false, true, false, false, false}, 1000, 1000, 700},
-    {EVENT_DOUBLE, {true, true, false, false, false}, 1500, 1000, 1500},
+    {EVENT_SINGLE, {true, false, false, false, false}, QUARTER_TIME, 0, 0},
+    {EVENT_SINGLE, {true, false, false, false, false}, EIGTH_TIME, 0, 700},
+    {EVENT_SINGLE, {false, false, true, false, false}, EIGTH_TIME, 0, 700},
+    {EVENT_SINGLE, {false, false, false, true, false}, EIGTH_TIME, 500, 700},
+    {EVENT_DOUBLE, {true, true, false, false, false}, QUARTER_TIME, 0, 1500},
 };
+
+
 
 /* ------------------------------------------------------------------ */
 void NotePlayer_Init(void)
 {
-    g_notePlayer.song = eventArray;
-    g_notePlayer.song_length = sizeof(eventArray) / sizeof(eventArray[0]);
-    g_notePlayer.current_index = 0;
-    g_notePlayer.songelapsed_ms = 0;
-    g_notePlayer.noteplayed_ms = 0;
-    g_notePlayer.finished = false;
-    g_notePlayer.note_status = false;
-    g_notePlayer.song_started = false;
-    g_notePlayer.carriage_in_position = false;
+    g_notePlayer.song           = eventArray;
+    g_notePlayer.song_length    = sizeof(eventArray) / sizeof(eventArray[0]);
+    g_notePlayer.current_index  = 0U;
+    g_notePlayer.noteStart_ms   = 0U;
+    g_notePlayer.run_state      = NOTE_PLAYER_STATE_IDLE;
 }
 
 /* ------------------------------------------------------------------ */
-void NotePlayer_Run(NotePlayerState *state, PID *pid, const Encoder_t *encoder)
+void NotePlayer_Run(NotePlayer_t *state, PID *pid, const Encoder_t *encoder)
 {   
+    const BaseEvent *event = &state->song[state->current_index];
+    uint32_t now = HAL_GetTick();
 
-    int solenoidReadyCounter = 0;
-    uint32_t currTime = HAL_GetTick();
-
-    if (!state->song_started) {
-        state->songStartTime_ms = HAL_GetTick();
-        state->song_started = true;
-    }
-
-    if (state->current_index >= state->song_length) {
-        state->finished = true;
-        return;
-    }
-
-    if (state->note_status == false) 
-    {   
-
-        if (state->carriage_in_position == false) 
-        {
-            Motor_SetTarget(state->song[state->current_index].target_position);
-            if (Motor_AtTarget(encoder)) 
-            {
-                state->carriage_in_position = true;
+    switch(state->run_state)
+    {
+        /* waiting for first call*/
+        case NOTE_PLAYER_STATE_IDLE:
+            state->current_index = 0u;
+            state->run_state     = NOTE_PLAYER_STATE_MOVE_MOTOR;
+            break;
+        
+        /* start moving to target and start delay timer*/
+        case NOTE_PLAYER_STATE_MOVE_MOTOR:
+            app_pid_requestReset(pid);
+            Motor_SetTarget(event->target_position);
+            state->noteStart_ms = now;
+            state->run_state    = NOTE_PLAYER_STATE_WAIT_READY;
+            break;
+        
+        /* wait until motor is at target and delay timer reached*/
+        case NOTE_PLAYER_STATE_WAIT_READY:
+            if (Motor_AtTarget(encoder) && (now - state->noteStart_ms >= note_delay_ms)) {
+                state->run_state = NOTE_PLAYER_STATE_STRIKE_NOTE;
             }
-        }
-
-        else 
-        {
-
-            // Trigger solenoids based on the event's solenoid_index array
-            for (int i = 0; i < SOLENOID_COUNT; i++) 
-            {
-                if (state->song[state->current_index].solenoid_index[i]) 
-                {
-                    Solenoid_Strike(i, state->song[state->current_index].duration_ms);
+            break;
+        
+        /* fire all solenoids in this event*/
+        case NOTE_PLAYER_STATE_STRIKE_NOTE:
+            for (uint8_t i = 0; i < SOLENOID_COUNT; i++) {
+                if (event->solenoid_index[i]) {
+                    Solenoid_Strike(i, event->duration_ms);
                 }
             }
-            state->note_status = true;               // Mark note as played
-            state->noteplayed_ms = HAL_GetTick();    // Record when the note was played
-        }
-
-    }
-    else 
-    {
-        for (int i = 0; i < SOLENOID_COUNT; i++) 
-        {
-            if (Solenoid_IsReady(i)) 
-            {
-                solenoidReadyCounter++;
+            note_delay_ms = event->time_to_next_ms;
+            state->run_state = NOTE_PLAYER_STATE_WAIT_NOTE_COMPLETE;
+            break;
+        
+        /* wait until all solenoids released */
+        case NOTE_PLAYER_STATE_WAIT_NOTE_COMPLETE:
+            if (Solenoid_AllReady()){
+                state->current_index++;
+                if (state->current_index >= state->song_length) {
+                    state->run_state = NOTE_PLAYER_STATE_FINISHED;
+                } else {
+                    state->run_state = NOTE_PLAYER_STATE_MOVE_MOTOR;
+                }
             }
-        }
-    }
+            break;
+        
+        
+        case NOTE_PLAYER_STATE_FINISHED:
 
-    if (solenoidReadyCounter == SOLENOID_COUNT 
-            && (currTime - state->noteplayed_ms >= 
-                (state->song[state->current_index].duration_ms + NOTE_DELAY_MS))
-            && state->carriage_in_position)
-    {       
-            app_pid_requestReset(pid);
-            state->current_index++;              // Go to the next event
-            state->carriage_in_position = false; // Reset for next note
-            state->note_status = false;          
+            break;
+        
+        /* should not be reached */
+        default:
+            break;
+
     }
 }
+
+
 /* ------------------------------------------------------------------ */
-NotePlayerState *NotePlayer_GetState(void)
+NotePlayer_t *NotePlayer_GetState(void)
 {
     return &g_notePlayer;
 }
 
 
 bool NotePlayer_IsDone(void){
-    return g_notePlayer.finished;
+    return g_notePlayer.run_state == NOTE_PLAYER_STATE_FINISHED; 
 }

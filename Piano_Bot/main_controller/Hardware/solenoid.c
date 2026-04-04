@@ -119,3 +119,13 @@ bool Solenoid_IsReady(uint8_t finger_idx)
     if (finger_idx >= SOLENOID_COUNT) return false;
     return (s_sol[finger_idx].state == SOL_IDLE);
 }
+
+bool Solenoid_AllReady(void)
+{
+    for (uint8_t i = 0; i < SOLENOID_COUNT; i++) {
+        if (!Solenoid_IsReady(i)) {
+            return false;
+        }
+    }
+    return true;
+}

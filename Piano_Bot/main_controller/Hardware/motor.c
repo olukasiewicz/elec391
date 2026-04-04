@@ -14,15 +14,6 @@
 /* position in counts that motor is trying to reach */
 static float motor_target = 0.0f;
 
-/* delete once validated that motor has control */
-// void set_pwm_duty(float duty_cycle)
-// {
-//     uint32_t arr = __HAL_TIM_GET_AUTORELOAD(&htim3);
-//     uint32_t ccr_value = (uint32_t)((duty_cycle/100.0f) * arr);
-//     __HAL_TIM_SET_COMPARE(&MOTOR_PWM_TIM, TIM_CHANNEL_3, ccr_value);
-//     __HAL_TIM_SET_COMPARE(&MOTOR_PWM_TIM, TIM_CHANNEL_4, ccr_value);
-// }
-
 /* ------------------------------------------------------------------ */
 void Motor_Init(void)
 {
@@ -71,7 +62,7 @@ void Motor_Drive(float duty_cycle, Motor_Dir_t dir)
             break;
  
         case MOTOR_DIR_BRAKE:
-            Motor_Brake();
+            Motor_Coast();
             break;
  
         default:
@@ -108,5 +99,7 @@ float Motor_GetTarget(void)
 
 bool Motor_AtTarget(const Encoder_t *enc)
 {
-    return abs(enc->position - motor_target) < POS_DEADBAND_COUNTS;
+    if (MOTOR_ALWAYS_AT_TARGET) return 1;
+    
+    return fabsf(enc->position - motor_target) < POS_DEADBAND_COUNTS;
 }

@@ -58,7 +58,9 @@ Homing_State_t Homing_Update(Homing_t *h, Encoder_t *enc, PID *pid)
             Motor_Update(pid, enc);
             if (Motor_AtTarget(enc)) {
                 app_pid_requestReset(pid);
-                h->state = HOMING_CREEP;
+                Motor_Brake();
+                Encoder_ResetPosition(enc);
+                h->state = HOMING_COMPLETE;
             }
             break;
 
