@@ -28,10 +28,19 @@ typedef enum {
     EVENT_CHORD,
 } EventType;
 
+
+typedef uint8_t FingerMask;
+enum {
+    FINGER_0 = 1u << 0,
+    FINGER_1 = 1u << 1,
+    FINGER_2 = 1u << 2,
+    FINGER_3 = 1u << 3,
+    FINGER_4 = 1u << 4
+};
+
 /* Base event */
 typedef struct {
-    EventType type;
-    bool solenoid_index[SOLENOID_COUNT];     // Which solenoid to actuate
+    FingerMask fingers;          // Which solenoids to actuate
     uint16_t duration_ms;       // How long to hold the note for (solenoids down)
     uint32_t time_to_next_ms;   // delay untill the next note should start (motor is allowed to move during this period, solenoids up)
     uint32_t target_position;   // Motor position

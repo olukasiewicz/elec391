@@ -19,15 +19,10 @@
 static NotePlayer_t g_notePlayer;
 uint32_t note_delay_ms = 0;
 
-static const BaseEvent eventArray[] = {
-    {EVENT_SINGLE, {true, false, false, false, false}, QUARTER_TIME, 0, 0},
-    {EVENT_SINGLE, {true, false, false, false, false}, EIGTH_TIME, 0, 700},
-    {EVENT_SINGLE, {false, false, true, false, false}, EIGTH_TIME, 0, 700},
-    {EVENT_SINGLE, {false, false, false, true, false}, EIGTH_TIME, 0, 700},
-    {EVENT_SINGLE, {false, false, false, false, true}, EIGTH_TIME, 500, 700},
-    {EVENT_DOUBLE, {true, true, false, false, false}, QUARTER_TIME, 0, 1500},
+static const BaseEvent eventArray[] = { 
+    {FINGER_0, QUARTER_TIME, 0, 500},
+    {FINGER_0, QUARTER_TIME, 0, 1000},
 };
-
 
 
 /* ------------------------------------------------------------------ */
@@ -50,7 +45,7 @@ void NotePlayer_Run(NotePlayer_t *state, PID *pid, const Encoder_t *encoder)
     {
         /* waiting for first call*/
         case NOTE_PLAYER_STATE_IDLE:
-            state->current_index = 0u;
+            state->current_index = 0U;
             state->run_state     = NOTE_PLAYER_STATE_MOVE_MOTOR;
             break;
         
@@ -72,7 +67,7 @@ void NotePlayer_Run(NotePlayer_t *state, PID *pid, const Encoder_t *encoder)
         /* fire all solenoids in this event*/
         case NOTE_PLAYER_STATE_STRIKE_NOTE:
             for (uint8_t i = 0; i < SOLENOID_COUNT; i++) {
-                if (event->solenoid_index[i]) {
+                if (event->fingers & (1U << i)) {
                     Solenoid_Strike(i, event->duration_ms);
                 }
             }
