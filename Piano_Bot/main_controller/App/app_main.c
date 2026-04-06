@@ -23,6 +23,7 @@
 
 #include "stm32f4xx_hal_gpio.h"
 #include <stdbool.h>
+#include <stdint.h>
 
 // #include "sequencer.h"
 
@@ -31,13 +32,13 @@ static Encoder_t    g_encoder;
 static Homing_t     g_homing;
 static PID          g_pid;
 const PID_Config PID_CONF = {
-    .Kp = 1.0f, //5
-    .Ki = 0.0f, // 5
-    .Kd = 0.00f, //0.05
+    .Kp = 10.0f, //5
+    .Ki = 2.0f, // 5
+    .Kd = 0.1f, //0.05
     .Kb = 0.0f,
 
     .Kff = 0.0f, // 0.5
-    .smoothing_coeff = 0.0f, // 0.2
+    .smoothing_coeff = 1.0f, // 0.2
 
     .out_max = MAX_DUTY_FORWARD,
     .out_min = MAX_DUTY_REVERSE,
@@ -67,6 +68,8 @@ static volatile App_State_t g_app_state = APP_BOOT;
  
 /* ---- Control loop flag (set by timer ISR) --------------------- */
 static volatile bool g_control_tick = false;
+
+static uint8_t song_num = 0u;
  
 /* ================================================================
  *  Public API
@@ -78,7 +81,7 @@ void App_Init(void)
     Encoder_Init(&g_encoder);
     Solenoid_Init();
     app_pid_init(&g_pid, &PID_CONF);
-    NotePlayer_Init();
+    NotePlayer_Init(song_num);
 
     g_homing.state = HOMING_IDLE;
     g_app_state = APP_IDLE;
@@ -133,6 +136,12 @@ void App_Tick(void)
         case APP_DONE:
             /* just jump back to idle */
             HAL_GPIO_WritePin(DEBUG_GPIO_Port, DEBUG_Pin, GPIO_PIN_SET);
+            
+            song_num++;
+            if (song_num > NUM_SONGS) {
+                song_num = 0;
+            }
+            
             g_app_state = APP_IDLE;
             break;
 

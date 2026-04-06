@@ -9,17 +9,12 @@
 // #define ENCODER_TIM htim2
 /* counts per mm = (ENCODER_CPR * 4) / ENCODER_PULLEY_MM  — computed at runtime */
  
-/* Counts per mm (computed once at init) */
-static float s_counts_per_mm = 0.0f;
- 
+/* Counts per mm (computed once at init) */ 
 /* ------------------------------------------------------------------ */
 void Encoder_Init(Encoder_t *enc)
 {
     /* Start encoder timer in interrupt mode (or polling — your choice) */
     HAL_TIM_Encoder_Start(&ENCODER_TIM, TIM_CHANNEL_ALL);
- 
-    /* Pre-compute resolution */
-    s_counts_per_mm = ((float)(ENCODER_CPR * 4u)) / ENCODER_PULLEY_MM;
  
     enc->position  = 0;
     enc->velocity  = 0;
@@ -48,12 +43,11 @@ void Encoder_ResetPosition(Encoder_t *enc)
 /* ------------------------------------------------------------------ */
 int32_t Encoder_MmToCounts(float mm)
 {
-    return (int32_t)(mm * s_counts_per_mm);
+    return (int32_t)(mm * COUNTS_TO_MM);
 }
  
 /* ------------------------------------------------------------------ */
 float Encoder_CountsToMm(int32_t counts)
 {
-    if (s_counts_per_mm == 0.0f) return 0.0f;
-    return (float)counts / s_counts_per_mm;
+    return (float)counts / COUNTS_TO_MM;
 }

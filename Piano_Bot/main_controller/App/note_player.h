@@ -31,11 +31,18 @@ typedef enum {
 
 typedef uint8_t FingerMask;
 enum {
-    FINGER_0 = 1u << 0,
+    FINGER_B = 1u << 0,
     FINGER_1 = 1u << 1,
     FINGER_2 = 1u << 2,
     FINGER_3 = 1u << 3,
     FINGER_4 = 1u << 4
+};
+enum {
+    FB = 1u << 0,
+    F1 = 1u << 1,
+    F2 = 1u << 2,
+    F3 = 1u << 3,
+    F4 = 1u << 4
 };
 
 /* Base event */
@@ -67,7 +74,7 @@ typedef struct {
 } NotePlayer_t;
 
 /* Load in the song */
-void NotePlayer_Init(void);
+void NotePlayer_Init(uint8_t song_ID);
 
 /* Playing the events (notes), and when it's time to move to the next event, release the solenoids and move forward */
 void NotePlayer_Run(NotePlayer_t *notePlayer, PID *pid, const Encoder_t *encoder);

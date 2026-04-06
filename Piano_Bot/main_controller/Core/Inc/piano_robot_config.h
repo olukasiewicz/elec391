@@ -22,8 +22,9 @@ extern TIM_HandleTypeDef htim3;   /* Solenoid PWM / tick timer (optional)   */
  * ---------------------------------------------------------- */
 #define ENCODER_TIM             htim2
 #define ENCODER_CPR             1200u // this is after gear (64*18.75)
-#define ENCODER_PULLEY_MM       (30 * 3.14159265f) /* Circumference in mm   */
-/* counts per mm = (ENCODER_CPR * 4) / ENCODER_PULLEY_MM  — computed at runtime */
+#define ENCODER_PULLEY_MM       (100f) /* Circumference in mm   */ //30 * 3.14159265
+#define COUNTS_TO_MM            12
+/* counts per mm = (ENCODER_CPR * 1) / ENCODER_PULLEY_MM  — computed at runtime */
  
 /* ----------------------------------------------------------
  * SOLENOIDS
@@ -42,9 +43,9 @@ extern TIM_HandleTypeDef htim3;   /* Solenoid PWM / tick timer (optional)   */
 /* ----------------------------------------------------------
  * MOTOR
  * ---------------------------------------------------------- */
-#define POS_DEADBAND_COUNTS 8   
-#define MAX_DUTY_FORWARD 50.0f
-#define MAX_DUTY_REVERSE -50.0f
+#define POS_DEADBAND_COUNTS 4  
+#define MAX_DUTY_FORWARD 70.0f
+#define MAX_DUTY_REVERSE -70.0f
 
 /* ----------------------------------------------------------
  * HOMING
@@ -58,12 +59,22 @@ extern TIM_HandleTypeDef htim3;   /* Solenoid PWM / tick timer (optional)   */
 #define CONTROL_LOOP_HZ 1000
 
 #define SKIP_HOMING 1
-#define MOTOR_ALWAYS_AT_TARGET 1
+#define MOTOR_ALWAYS_AT_TARGET 0
+
+#define NUM_SONGS 2
 
 /* key constants */
-#define WHITE_WIDTH_MM 21.6f
-#define BLACK_WIDTH_MM 11.7f
+#define WHITE_MM 21.6f
+#define BLACK_MM 11.7f
 #define BLACK_OFFSET_MM 25
 #define OCTAVE_MM 181
+
+#define OCTAVE_CNT OCTAVE_MM * COUNTS_TO_MM
+#define WHITE_CNT WHITE_MM * COUNTS_TO_MM
+
+// all relative to home at C3=0
+#define G3_note OCTAVE_CNT * 0 + WHITE_CNT * 4
+#define C4_note OCTAVE_CNT * 1
+#define G4_note C4_note + WHITE_CNT*4
 
 #endif /* PIANO_ROBOT_CONFIG_H */

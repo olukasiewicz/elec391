@@ -31,12 +31,12 @@ void Motor_Init(void)
 /* ------------------------------------------------------------------ */
 void Motor_Update(PID *pid, Encoder_t *enc)
 {
-    float duty_cycle = app_pid_compute(pid, motor_target, enc->position, 0.0f);
+    float duty_cycle = app_pid_compute(pid, motor_target, (float)enc->position, 0.0f);
 
     float abs_duty_cycle = fabsf(duty_cycle);
 
     if (fabsf(pid->error) <= (float)POS_DEADBAND_COUNTS) {
-        Motor_Brake();
+        Motor_Coast();
     } else if (duty_cycle > 0.0f){
         Motor_Drive(abs_duty_cycle, MOTOR_DIR_FORWARD);
     } else {
@@ -101,5 +101,5 @@ bool Motor_AtTarget(const Encoder_t *enc)
 {
     if (MOTOR_ALWAYS_AT_TARGET) return 1;
     
-    return fabsf(enc->position - motor_target) < POS_DEADBAND_COUNTS;
+    return fabsf(enc->position - motor_target) <= POS_DEADBAND_COUNTS;
 }
