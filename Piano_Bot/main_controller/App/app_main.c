@@ -20,6 +20,7 @@
 #include "homing.h"
 #include "solenoid.h"
 #include "note_player.h"
+#include "app_ui.h"
 
 #include "stm32f4xx_hal_gpio.h"
 #include <stdbool.h>
@@ -32,8 +33,8 @@ static Encoder_t    g_encoder;
 static Homing_t     g_homing;
 static PID          g_pid;
 const PID_Config PID_CONF = {
-    .Kp = 10.0f, //5
-    .Ki = 2.0f, // 5
+    .Kp = 10.0f, // 5
+    .Ki = 1.5f, // 5
     .Kd = 0.1f, //0.05
     .Kb = 0.0f,
 
@@ -68,8 +69,6 @@ static volatile App_State_t g_app_state = APP_BOOT;
  
 /* ---- Control loop flag (set by timer ISR) --------------------- */
 static volatile bool g_control_tick = false;
-
-static uint8_t song_num = 0u;
  
 /* ================================================================
  *  Public API
@@ -81,10 +80,12 @@ void App_Init(void)
     Encoder_Init(&g_encoder);
     Solenoid_Init();
     app_pid_init(&g_pid, &PID_CONF);
-    NotePlayer_Init(song_num);
+    NotePlayer_Init(Get_SongID());
 
     g_homing.state = HOMING_IDLE;
     g_app_state = APP_IDLE;
+
+    HAL_GPIO_WritePin(GPIO_RIGHT_LED_GPIO_Port, GPIO_RIGHT_LED_Pin, GPIO_PIN_SET);
 }
 
 void App_Tick(void)
@@ -104,6 +105,7 @@ void App_Tick(void)
             break;
         
         case APP_IDLE:
+            UI_Update();
             /* after App_Init(), wait for home button to start*/
             if (HAL_GPIO_ReadPin(Home_Button_GPIO_Port, Home_Button_Pin) == GPIO_PIN_SET){
                 if (!SKIP_HOMING){
@@ -112,7 +114,8 @@ void App_Tick(void)
                 } else {
                     g_app_state = APP_READY; // skip homing process
                 }
-                NotePlayer_Init();
+
+                NotePlayer_Init(Get_SongID());
             }
             break;  
         
@@ -122,8 +125,13 @@ void App_Tick(void)
 
         case APP_READY:
             /* transition state to start playing */
-            // call any player start funcs
-            g_app_state = APP_PLAYING;
+
+            // skip playing song for debugging
+            if (SKIP_SONG == 1) {
+                g_app_state = APP_DONE;
+            } else {
+                g_app_state = APP_PLAYING;
+            }
             break;
 
         case APP_PLAYING:
@@ -136,11 +144,6 @@ void App_Tick(void)
         case APP_DONE:
             /* just jump back to idle */
             HAL_GPIO_WritePin(DEBUG_GPIO_Port, DEBUG_Pin, GPIO_PIN_SET);
-            
-            song_num++;
-            if (song_num > NUM_SONGS) {
-                song_num = 0;
-            }
             
             g_app_state = APP_IDLE;
             break;
@@ -172,7 +175,6 @@ void App_ControlTick(void)
             Homing_State_t hs = Homing_Update(&g_homing, &g_encoder, &g_pid);
             if (hs == HOMING_COMPLETE){
                 g_app_state = APP_READY;
-                g_app_state = APP_DONE;
             } else if (hs == HOMING_FAULT) {
                 g_app_state = APP_FAULT;
             }

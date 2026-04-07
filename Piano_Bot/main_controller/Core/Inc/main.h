@@ -70,6 +70,12 @@ void Error_Handler(void);
 #define SENSE_A_GPIO_Port GPIOA
 #define SENSE_B_Pin GPIO_PIN_1
 #define SENSE_B_GPIO_Port GPIOA
+#define GPIO_LEFT_LED_Pin GPIO_PIN_3
+#define GPIO_LEFT_LED_GPIO_Port GPIOA
+#define GPIO_RIGHT_LED_Pin GPIO_PIN_4
+#define GPIO_RIGHT_LED_GPIO_Port GPIOA
+#define GPIO_BTN_Pin GPIO_PIN_5
+#define GPIO_BTN_GPIO_Port GPIOA
 #define M2_Pin GPIO_PIN_0
 #define M2_GPIO_Port GPIOB
 #define M1_Pin GPIO_PIN_1

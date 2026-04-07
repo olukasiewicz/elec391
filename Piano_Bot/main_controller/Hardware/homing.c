@@ -44,7 +44,7 @@ Homing_State_t Homing_Update(Homing_t *h, Encoder_t *enc, PID *pid)
             Motor_Drive(MOTOR_HOMING_DUTY_CYCLE, MOTOR_DIR_REVERSE);
 
             if (switch_active()){
-                Motor_Brake();
+                Motor_Coast();
                 // back off by small amount
                 int32_t backoff_counts = Encoder_MmToCounts(BACKOFF_MM);
                 // set motor target to enc_position + backoff counts
@@ -58,19 +58,8 @@ Homing_State_t Homing_Update(Homing_t *h, Encoder_t *enc, PID *pid)
             Motor_Update(pid, enc);
             if (Motor_AtTarget(enc)) {
                 app_pid_requestReset(pid);
-                Motor_Brake();
+                Motor_Coast();
                 Encoder_ResetPosition(enc);
-                h->state = HOMING_COMPLETE;
-            }
-            break;
-
-        case HOMING_CREEP:
-            Motor_Drive(MOTOR_CREEP_DUTY_CYCLE, MOTOR_DIR_REVERSE);
-
-            if (switch_active()){
-                Motor_Brake();
-                Encoder_ResetPosition(enc);
-                app_pid_requestReset(pid);
                 h->state = HOMING_COMPLETE;
             }
             break;

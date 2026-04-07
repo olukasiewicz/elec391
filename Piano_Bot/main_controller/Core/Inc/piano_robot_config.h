@@ -23,7 +23,7 @@ extern TIM_HandleTypeDef htim3;   /* Solenoid PWM / tick timer (optional)   */
 #define ENCODER_TIM             htim2
 #define ENCODER_CPR             1200u // this is after gear (64*18.75)
 #define ENCODER_PULLEY_MM       (100f) /* Circumference in mm   */ //30 * 3.14159265
-#define COUNTS_TO_MM            12
+#define COUNTS_TO_MM            12.0f
 /* counts per mm = (ENCODER_CPR * 1) / ENCODER_PULLEY_MM  — computed at runtime */
  
 /* ----------------------------------------------------------
@@ -43,38 +43,53 @@ extern TIM_HandleTypeDef htim3;   /* Solenoid PWM / tick timer (optional)   */
 /* ----------------------------------------------------------
  * MOTOR
  * ---------------------------------------------------------- */
-#define POS_DEADBAND_COUNTS 4  
-#define MAX_DUTY_FORWARD 70.0f
-#define MAX_DUTY_REVERSE -70.0f
+#define POS_DEADBAND_COUNTS 4.0f  
+#define MAX_DUTY_FORWARD 65.0f
+#define MAX_DUTY_REVERSE -65.0f
 
 /* ----------------------------------------------------------
  * HOMING
  * ---------------------------------------------------------- */
 #define HOMING_TIMEOUT_MS          100000u   /* Fault if homing not done   */
-#define MOTOR_HOMING_DUTY_CYCLE    45      /* speed towards 1st switch hit */
-#define MOTOR_CREEP_DUTY_CYCLE     45      /* speed for second switch hit */
-#define BACKOFF_MM                 25.0f     /* mm to back off after switch triggers  */
+#define MOTOR_HOMING_DUTY_CYCLE    65      /* speed towards 1st switch hit */
+#define MOTOR_CREEP_DUTY_CYCLE     65      /* speed for second switch hit */
+#define BACKOFF_MM                 5.0f     /* mm to back off after switch triggers  */
  
 
 #define CONTROL_LOOP_HZ 1000
 
-#define SKIP_HOMING 1
+/* ----------------------------------------------------------------*/
+#define SKIP_HOMING 0
+#define SKIP_SONG 0
 #define MOTOR_ALWAYS_AT_TARGET 0
+/* ----------------------------------------------------------------*/
+
+
+/* ----------------------------------------------------------
+ * UI
+ * ---------------------------------------------------------- */
+ #define AUTO_BLINK_DELAY 5000
+ #define BLINK_DELAY 200
+ #define DEBOUNCE_MS 100
 
 #define NUM_SONGS 2
 
 /* key constants */
-#define WHITE_MM 21.6f
+#define WHITE_MM 21.5f
 #define BLACK_MM 11.7f
-#define BLACK_OFFSET_MM 25
-#define OCTAVE_MM 181
+#define BLACK_OFFSET_MM 25.0f
+#define OCTAVE_MM 160.0f
 
-#define OCTAVE_CNT OCTAVE_MM * COUNTS_TO_MM
-#define WHITE_CNT WHITE_MM * COUNTS_TO_MM
+#define OCTAVE_CNT 1920
+#define WHITE_CNT 276
 
 // all relative to home at C3=0
-#define G3_note OCTAVE_CNT * 0 + WHITE_CNT * 4
-#define C4_note OCTAVE_CNT * 1
-#define G4_note C4_note + WHITE_CNT*4
+#define C3_note 0.0f
+#define E3_note 552
+#define G3_note 1104
+
+#define C4_note OCTAVE_CNT
+#define E4_note OCTAVE_CNT + 552
+#define G4_note OCTAVE_CNT + G3_note
 
 #endif /* PIANO_ROBOT_CONFIG_H */

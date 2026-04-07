@@ -45,6 +45,7 @@ enum {
     F4 = 1u << 4
 };
 
+
 /* Base event */
 typedef struct {
     FingerMask fingers;          // Which solenoids to actuate
@@ -72,6 +73,11 @@ typedef struct {
     uint32_t            noteStart_ms;
     NotePlayerState_t   run_state;
 } NotePlayer_t;
+
+typedef struct {
+    const BaseEvent *data;
+    uint16_t length;
+} Song;
 
 /* Load in the song */
 void NotePlayer_Init(uint8_t song_ID);
