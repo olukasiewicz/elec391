@@ -13,11 +13,11 @@
 
 
 #define BPM1 91
-#define BPM2 76
+#define BPM2 85
 
-#define WHOLE_TIME(bpm)     (240000 / bpm)     // 2000 at 120bpm
+#define WHOLE_TIME(bpm)     (240000 / bpm)      // 2000 at 120bpm
 #define HALF_TIME(bpm)      (120000 / bpm)      // 1000 at 120bpm
-#define QUARTER_TIME(bpm)    (60000 / bpm)    // 500 at 120bpm
+#define QUARTER_TIME(bpm)    (60000 / bpm)      // 500 at 120bpm
 #define EIGHTH_TIME(bpm)     (30000 / bpm)      // 250 at 120bpm
 #define TRIPLET_TIME(bpm)    (20000 / bpm)      // 250 at 120bpm
 
@@ -396,7 +396,7 @@ static const BaseEvent Force_Theme[] = {
     {F3, HALF_TIME(BPM2), 0, G3_note}, // D
     {FB, QUARTER_TIME(BPM2), 0, E3_note+WHITE_CNT}, // Gb
     {F3, HALF_TIME(BPM2), 0, G3_note}, // D
-    {F1, HALF_TIME(BPM2), HALF_TIME(BPM2), G3_note}, // G
+    {F1, HALF_TIME(BPM2), 0, G3_note}, // G
     
     {F1, QUARTER_TIME(BPM2), 0, C3_note+WHITE_CNT}, // D @2:08
     {FB, HALF_TIME(BPM2), 0, G3_note+WHITE_CNT}, // Bb
